@@ -1,0 +1,32 @@
+{
+  "none": {
+    "asr": 25.0,
+    "total": 20,
+    "succeeded": 5,
+    "blocked": 0
+  },
+  "input": {
+    "asr": 20.0,
+    "total": 20,
+    "succeeded": 4,
+    "blocked": 7
+  },
+  "system": {
+    "asr": 15.0,
+    "total": 20,
+    "succeeded": 3,
+    "blocked": 0
+  },
+  "output": {
+    "asr": 20.0,
+    "total": 20,
+    "succeeded": 4,
+    "blocked": 0
+  },
+  "all": {
+    "asr": 10.0,
+    "total": 20,
+    "succeeded": 2,
+    "blocked": 7
+  }
+}
