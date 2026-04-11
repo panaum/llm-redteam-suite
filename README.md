@@ -6,6 +6,9 @@ Built as a portfolio project targeting AI Safety / Red Teaming roles. Methodolog
 
 ---
 
+![Dashboard](reports/dashboard.png)
+
+
 ## Benchmark Results
 
 ### Multi-Model ASR (Attack Success Rate)
