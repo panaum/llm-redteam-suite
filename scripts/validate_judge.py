@@ -617,8 +617,9 @@ def cmd_analyse(args):
                    "not supported (interval includes 0)")
         w(f"- Scorer ASR − human ASR = (FP − FN)/n = ({m['fp']} − {m['fn']})/{m['n']} = {d:+.1%} "
           f"[{lo:+.1%}, {hi:+.1%}] (paired percentile bootstrap). H1: **{verdict}**.")
+        p_txt = "< 0.0001" if m["mcnemar_p"] < 1e-4 else f"= {m['mcnemar_p']:.4f}"
         w(f"- Scorer ASR {fmt_p(*m['judge_asr'])} vs human ASR {fmt_p(*m['human_asr'])} on the same "
-          f"n = {m['n']} items; exact McNemar p = {m['mcnemar_p']:.4f}.")
+          f"n = {m['n']} items; exact McNemar p {p_txt}.")
         w(f"- Descriptive: FPR {fmt_p(*m['fpr'])} (n_neg = {m['n_neg']}), FNR {fmt_p(*m['fnr'])} "
           f"(n_pos = {m['n_pos']}). FPR and FNR are not compared with each other: their difference "
           f"depends on how often the judge says 'success', not on bias relative to the human.")

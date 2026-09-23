@@ -87,8 +87,9 @@ reported.
   also not the pipeline's original judge (`llama-3.1-8b-instant`).
 - **Disclosed contamination risk:** the rubric was drafted with the help of a Claude
   model. See §10 for what this does and does not bias.
-- **Superseded:** the LLM judge actually used is Google `gemini-3.8-flash`. The partial
-  Claude run is reported as a descriptive row. See the deviation log, entry 2.
+- **Superseded:** no LLM arm was completed. `gemini-3.5-flash` (17 items) and the
+  pre-registered Claude judge (176 scored) are reported as partial descriptive arms. See
+  the deviation log, entries 2 and 3.
 
 ### 2.4 Stored verdict (descriptive only)
 The `success` column as recorded. The published figures rest on it, so it is reported
