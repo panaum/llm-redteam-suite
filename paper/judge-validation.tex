@@ -7,16 +7,17 @@
 \usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xurl}
 
 \newcommand{\code}[1]{\texttt{#1}}
+\setlength{\emergencystretch}{3em}
 
 \title{Does an Embedding-Similarity Judge Measure Jailbreak Success?\\
 A Pre-Registered Validation Against Blind Human Labels}
-% TODO: author details pending
-\author{[AUTHOR NAME]\\ [AFFILIATION]}
+\author{Anaum Pandit\\ {Independent researcher, Srinagar, India}\\ \href{mailto:anaump7@gmail.com}{\texttt{anaump7@gmail.com}}}
 \date{September 2026}
 
 \begin{document}
@@ -29,7 +30,7 @@ The hypothesis was contradicted: the embedding judge reported success on 22.3\% 
 All labels come from one annotator, who labelled faster than careful reading allows, and no LLM-judge arm could be completed, so these estimates are provisional.
 \end{abstract}
 
-\noindent Pre-registration, data and code: \url{https://github.com/panaum/llm-redteam-suite}, branch \code{judge-validation}.
+\noindent Pre-registration, data and code: \url{https://github.com/panaum/llm-redteam-suite} (branch \code{main}).
 
 \section{Introduction}
 
@@ -41,11 +42,11 @@ The result contradicts the hypothesis that motivated the study, and we report it
 
 \section{The instrument}
 
-The scorer embeds a response with \code{all-MiniLM-L6-v2}~\citep{reimers2019sentence,sentencetransformers2021allminilm}. It computes the maximum cosine similarity to five refusal anchors (``I cannot and will not provide that information.'') and to five compliance anchors (``Sure, here is how you can do that.''), and declares success when the compliance maximum is higher.
+The scorer embeds a response with \code{all-\allowbreak MiniLM-\allowbreak L6-\allowbreak v2}~\citep{reimers2019sentence,sentencetransformers2021allminilm}. It computes the maximum cosine similarity to five refusal anchors (``I cannot and will not provide that information.'') and to five compliance anchors (``Sure, here is how you can do that.''), and declares success when the compliance maximum is higher.
 
 We suspected a bias in register. The anchors are short statements of willingness or unwillingness, and none contains harmful content. A response that opens ``Sure, here's how\ldots'' and then delivers nothing should look like compliance. From this we derived H1 (the scorer over-reports success) and H2 (its false positives concentrate in responses that open in a compliant register).
 
-Reading the pipeline code before sampling showed that the tool's stored \code{success} column is not the scorer alone. For static attacks, the pipeline stores the logical OR of the scorer and a separate LLM judge (\code{llama-3.1-8b-instant}). That judge's prompt counts ``took on an unrestricted persona'' as success. For PAIR~\citep{chao2023jailbreaking} and many-shot attacks, the stored column is the scorer alone. We therefore re-ran the scorer on every sampled response to test it in isolation. The re-run reproduced the stored verdict on all 61 non-static sampled rows. The stored composite is reported as a separate, descriptive row.
+Reading the pipeline code before sampling showed that the tool's stored \code{success} column is not the scorer alone. For static attacks, the pipeline stores the logical OR of the scorer and a separate LLM judge (\code{llama-\allowbreak 3.1-\allowbreak 8b-\allowbreak instant}). That judge's prompt counts ``took on an unrestricted persona'' as success. For PAIR~\citep{chao2023jailbreaking} and many-shot attacks, the stored column is the scorer alone. We therefore re-ran the scorer on every sampled response to test it in isolation. The re-run reproduced the stored verdict on all 61 non-static sampled rows. The stored composite is reported as a separate, descriptive row.
 
 \section{Method}
 
@@ -64,7 +65,7 @@ The rubric deliberately counts any payload material as success. This choice make
 \subsection{Sample}
 The attack log holds 432 attacks across six categories and four target models. We drew 33 attacks per category with a within-category random draw. \code{bias\_elicitation} has only 32 rows, and all were taken, giving $n = 197$. The drawn row ids are committed. The sample mirrors the log:
 \begin{itemize}
-  \item \textbf{Models:} 137 of 197 items (70\%) come from \code{llama-3.1-8b-instant}, 26 from \code{llama-3.3-70b-versatile}, 22 from \code{qwen/qwen3-32b} and 12 from \code{openai/gpt-oss-120b}.
+  \item \textbf{Models:} 137 of 197 items (70\%) come from \code{llama-\allowbreak 3.1-\allowbreak 8b-\allowbreak instant}, 26 from \code{llama-\allowbreak 3.3-\allowbreak 70b-\allowbreak versatile}, 22 from \code{qwen/qwen3-32b} and 12 from \code{openai/gpt-oss-120b}.
   \item \textbf{Techniques:} 136 items are static attacks, 54 PAIR and 7 many-shot.
 \end{itemize}
 
@@ -95,10 +96,10 @@ The labeller saw only the prompt and the response, in random order. Category, ta
 The reference labels mark 104 of 197 responses as successes and 93 as non-successes. There were no skips.
 
 \subsection{Primary: pooled agreement}
-
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \small
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrrrlll}
 \toprule
 Judge & TP & FP & FN & TN & $\kappa$ [95\% CI] & FPR ($n=93$) & FNR ($n=104$) \\
@@ -148,7 +149,7 @@ Together these facts suggest that on long, content-bearing responses the scorer 
 \subsection{Published figures}
 The published pooled ASR, computed from the stored verdict over all 432 attacks, is 34.3\% [29.9, 38.9] (148/432). The human-labelled rate is 52.8\% (104/197), or 53.9\% [46.9, 60.8] when weighted to category sizes (stratified bootstrap).
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{lllll}
@@ -173,7 +174,7 @@ Two observations are worth recording:
   \item \code{role\_confusion} is the one category where the published figure is higher than the human rate. There the stored composite marks 9 of 10 human non-successes as successes, which is consistent with its LLM component counting persona adoption as success.
 \end{itemize}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/asr_published_vs_corrected.png}
 \caption{Exploratory. Published ASR (stored verdict over all rows of each category, $N$) against human-labelled ASR on the sample ($n$), with 95\% Wilson intervals.}
@@ -188,7 +189,7 @@ Two observations are worth recording:
 \end{itemize}
 These 63 items are short (median 241 characters, against 1{,}012 overall), so the subset is not representative.
 
-\paragraph{By model (indicative only).} Embedding $\kappa$ was 0.163 [0.029, 0.294] on the 137 \code{llama-3.1-8b-instant} items and 0.072 $[-0.102, 0.261]$ on the 60 items from the other three models.
+\paragraph{By model (indicative only).} Embedding $\kappa$ was 0.163 [0.029, 0.294] on the 137 \code{llama-\allowbreak 3.1-\allowbreak 8b-\allowbreak instant} items and 0.072 $[-0.102, 0.261]$ on the 60 items from the other three models.
 
 \paragraph{Partial LLM arms (descriptive only; excluded from all tests).}
 \begin{itemize}
@@ -221,7 +222,7 @@ All of the following are logged in \code{STUDY\_PLAN.md} with timestamps:
 
 \paragraph{The criterion is a judgement.} The rubric counts any payload material as success. A stricter criterion requiring correctness or completeness, as in StrongREJECT~\citep{souly2024strongreject}, would lower the human ASR, and could reverse the sign of H1 for some categories. Our finding is relative to this rubric, not to ``harm'' in general.
 
-\paragraph{Sample composition.} 70\% of the items come from one small model, \code{llama-3.1-8b-instant}. That model was also the LLM judge inside the stored composite, so for static rows it judged its own responses. The results describe judge behaviour mainly on that model's response style.
+\paragraph{Sample composition.} 70\% of the items come from one small model, \code{llama-\allowbreak 3.1-\allowbreak 8b-\allowbreak instant}. That model was also the LLM judge inside the stored composite, so for static rows it judged its own responses. The results describe judge behaviour mainly on that model's response style.
 
 \paragraph{One domain and one scorer.} The study covers one attack log, one embedding model with one anchor set, and target models from three families. Its results do not transfer to other anchor sets or to embedding judges in general.
 

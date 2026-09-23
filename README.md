@@ -9,6 +9,12 @@ Methodology based on [Chao et al. 2023 (PAIR, arXiv:2310.08419)](https://arxiv.o
 
 ![Dashboard](reports/dashboard.png)
 
+*Dashboard for run `bddbd4af` (2026-04-05; 27 attacks per model). **These are the tool's own judge output, not validated figures.** They include the 100% role-confusion ASR. Each number is the stored verdict: the embedding scorer, OR'd with an LLM judge on static attacks. A pre-registered validation study compared that verdict with 197 blind human labels. It agreed only fairly (κ = 0.281), and the embedding scorer inside it agreed only slightly (κ = 0.153). See the [judge validation study](#judge-validation-study).*
+
+![Published vs human-labelled ASR by category](validation/asr_published_vs_corrected.png)
+
+*Published vs human-labelled attack success rate by category. Published = the stored verdict over every logged attack in the category (N). Human-labelled = the validation sample (n). Error bars are 95% Wilson intervals. Exploratory: all labels come from one annotator, and differences between categories are not tested. Source: [validation report](validation/validation_report.md).*
+
 ---
 
 ## Judge validation study

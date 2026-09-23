@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use this study, its data or its code, please cite the paper below."
+title: "llm-redteam-suite: judge-validation study (data and code)"
+type: dataset
+authors:
+  - family-names: "Pandit"
+    given-names: "Anaum"
+    affiliation: "Independent researcher, Srinagar, India"
+    email: "anaump7@gmail.com"
+repository-code: "https://github.com/panaum/llm-redteam-suite"
+url: "https://github.com/panaum/llm-redteam-suite/tree/main"
+license: CC-BY-4.0
+date-released: "2026-09-23"
+version: "judge-validation-1.0"
+abstract: >-
+  Pre-registered validation of an embedding-similarity attack-success judge used in an
+  LLM red-teaming tool, against blind human labels on a stratified sample of 197
+  responses. Includes the rubric, study plan and deviation log, sample manifest, the 197
+  labels, every judge's outputs, the analysis code and the validation report.
+keywords:
+  - LLM red teaming
+  - jailbreak evaluation
+  - LLM-as-a-judge
+  - annotation
+  - pre-registration
+preferred-citation:
+  type: article
+  title: "Does an Embedding-Similarity Judge Measure Jailbreak Success? A Pre-Registered Validation Against Blind Human Labels"
+  authors:
+    - family-names: "Pandit"
+      given-names: "Anaum"
+      affiliation: "Independent researcher, Srinagar, India"
+      email: "anaump7@gmail.com"
+  year: 2026
+  month: 9
+  url: "https://github.com/panaum/llm-redteam-suite/blob/main/paper/judge-validation.pdf"
+  repository-code: "https://github.com/panaum/llm-redteam-suite"
+  license: CC-BY-4.0

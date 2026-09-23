@@ -1,0 +1,172 @@
+\begin{thebibliography}{20}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Artstein and Poesio(2008)]{artstein2008inter}
+Ron Artstein and Massimo Poesio.
+\newblock Survey article: Inter-coder agreement for computational linguistics.
+\newblock \emph{Computational Linguistics}, 34\penalty0 (4):\penalty0 555--596,
+  2008.
+\newblock URL \url{https://aclanthology.org/J08-4004/}.
+
+\bibitem[Chao et~al.(2023)Chao, Robey, Dobriban, Hassani, Pappas, and
+  Wong]{chao2023jailbreaking}
+Patrick Chao, Alexander Robey, Edgar Dobriban, Hamed Hassani, George~J. Pappas,
+  and Eric Wong.
+\newblock Jailbreaking black box large language models in twenty queries, 2023.
+\newblock URL \url{https://arxiv.org/abs/2310.08419}.
+
+\bibitem[Chao et~al.(2024)Chao, Debenedetti, Robey, Andriushchenko, Croce,
+  Sehwag, Dobriban, Flammarion, Pappas, Tramer, Hassani, and
+  Wong]{chao2024jailbreakbench}
+Patrick Chao, Edoardo Debenedetti, Alexander Robey, Maksym Andriushchenko,
+  Francesco Croce, Vikash Sehwag, Edgar Dobriban, Nicolas Flammarion, George~J.
+  Pappas, Florian Tramer, Hamed Hassani, and Eric Wong.
+\newblock {JailbreakBench}: An open robustness benchmark for jailbreaking large
+  language models, 2024.
+\newblock URL \url{https://arxiv.org/abs/2404.01318}.
+
+\bibitem[Cohen(1960)]{cohen1960coefficient}
+Jacob Cohen.
+\newblock A coefficient of agreement for nominal scales.
+\newblock \emph{Educational and Psychological Measurement}, 20\penalty0
+  (1):\penalty0 37--46, 1960.
+\newblock URL \url{https://doi.org/10.1177/001316446002000104}.
+
+\bibitem[Ganguli et~al.(2022)Ganguli, Lovitt, Kernion, Askell, Bai, Kadavath,
+  Mann, Perez, Schiefer, Ndousse, Jones, Bowman, Chen, Conerly, DasSarma,
+  Drain, Elhage, El-Showk, Fort, Hatfield-Dodds, Henighan, Hernandez, Hume,
+  Jacobson, Johnston, Kravec, Olsson, Ringer, Tran-Johnson, Amodei, Brown,
+  Joseph, McCandlish, Olah, Kaplan, and Clark]{ganguli2022red}
+Deep Ganguli, Liane Lovitt, Jackson Kernion, Amanda Askell, Yuntao Bai, Saurav
+  Kadavath, Ben Mann, Ethan Perez, Nicholas Schiefer, Kamal Ndousse, Andy
+  Jones, Sam Bowman, Anna Chen, Tom Conerly, Nova DasSarma, Dawn Drain, Nelson
+  Elhage, Sheer El-Showk, Stanislav Fort, Zac Hatfield-Dodds, Tom Henighan,
+  Danny Hernandez, Tristan Hume, Josh Jacobson, Scott Johnston, Shauna Kravec,
+  Catherine Olsson, Sam Ringer, Eli Tran-Johnson, Dario Amodei, Tom Brown,
+  Nicholas Joseph, Sam McCandlish, Chris Olah, Jared Kaplan, and Jack Clark.
+\newblock Red teaming language models to reduce harms: Methods, scaling
+  behaviors, and lessons learned, 2022.
+\newblock URL \url{https://arxiv.org/abs/2209.07858}.
+
+\bibitem[Landis and Koch(1977)]{landis1977measurement}
+J.~Richard Landis and Gary~G. Koch.
+\newblock The measurement of observer agreement for categorical data.
+\newblock \emph{Biometrics}, 33\penalty0 (1):\penalty0 159--174, 1977.
+\newblock URL \url{https://doi.org/10.2307/2529310}.
+
+\bibitem[Mazeika et~al.(2024)Mazeika, Phan, Yin, Zou, Wang, Mu, Sakhaee, Li,
+  Basart, Li, Forsyth, and Hendrycks]{mazeika2024harmbench}
+Mantas Mazeika, Long Phan, Xuwang Yin, Andy Zou, Zifan Wang, Norman Mu, Elham
+  Sakhaee, Nathaniel Li, Steven Basart, Bo~Li, David Forsyth, and Dan
+  Hendrycks.
+\newblock {HarmBench}: A standardized evaluation framework for automated red
+  teaming and robust refusal, 2024.
+\newblock URL \url{https://arxiv.org/abs/2402.04249}.
+
+\bibitem[McNemar(1947)]{mcnemar1947note}
+Quinn McNemar.
+\newblock Note on the sampling error of the difference between correlated
+  proportions or percentages.
+\newblock \emph{Psychometrika}, 12\penalty0 (2):\penalty0 153--157, 1947.
+\newblock URL \url{https://doi.org/10.1007/BF02295996}.
+
+\bibitem[Newcombe(1998)]{newcombe1998interval}
+Robert~G. Newcombe.
+\newblock Interval estimation for the difference between independent
+  proportions: Comparison of eleven methods.
+\newblock \emph{Statistics in Medicine}, 17\penalty0 (8):\penalty0 873--890,
+  1998.
+\newblock URL \url{https://pubmed.ncbi.nlm.nih.gov/9595617/}.
+
+\bibitem[Perez et~al.(2022)Perez, Huang, Song, Cai, Ring, Aslanides, Glaese,
+  McAleese, and Irving]{perez2022red}
+Ethan Perez, Saffron Huang, Francis Song, Trevor Cai, Roman Ring, John
+  Aslanides, Amelia Glaese, Nat McAleese, and Geoffrey Irving.
+\newblock Red teaming language models with language models, 2022.
+\newblock URL \url{https://arxiv.org/abs/2202.03286}.
+
+\bibitem[Ran et~al.(2024)Ran, Liu, Gong, Zheng, He, Cong, and
+  Wang]{ran2024jailbreakeval}
+Delong Ran, Jinyuan Liu, Yichen Gong, Jingyi Zheng, Xinlei He, Tianshuo Cong,
+  and Anyu Wang.
+\newblock {JailbreakEval}: An integrated toolkit for evaluating jailbreak
+  attempts against large language models, 2024.
+\newblock URL \url{https://arxiv.org/abs/2406.09321}.
+
+\bibitem[Reimers and Gurevych(2019)]{reimers2019sentence}
+Nils Reimers and Iryna Gurevych.
+\newblock Sentence-{BERT}: Sentence embeddings using {S}iamese {BERT}-networks.
+\newblock In \emph{Proceedings of the 2019 Conference on Empirical Methods in
+  Natural Language Processing and the 9th International Joint Conference on
+  Natural Language Processing (EMNLP-IJCNLP)}, pages 3982--3992. Association
+  for Computational Linguistics, 2019.
+\newblock URL \url{https://aclanthology.org/D19-1410/}.
+
+\bibitem[{Sentence Transformers}(n.d.)]{sentencetransformers2021allminilm}
+{Sentence Transformers}.
+\newblock sentence-transformers/all-{MiniLM}-{L6}-v2.
+\newblock Hugging Face model card, n.d.
+\newblock URL
+  \url{https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2}.
+\newblock Accessed 2026-09-23.
+
+\bibitem[Souly et~al.(2024)Souly, Lu, Bowen, Trinh, Hsieh, Pandey, Abbeel,
+  Svegliato, Emmons, Watkins, and Toyer]{souly2024strongreject}
+Alexandra Souly, Qingyuan Lu, Dillon Bowen, Tu~Trinh, Elvis Hsieh, Sana Pandey,
+  Pieter Abbeel, Justin Svegliato, Scott Emmons, Olivia Watkins, and Sam Toyer.
+\newblock A {StrongREJECT} for empty jailbreaks, 2024.
+\newblock URL \url{https://arxiv.org/abs/2402.10260}.
+
+\bibitem[Thakur et~al.(2024)Thakur, Choudhary, Ramayapally, Vaidyanathan, and
+  Hupkes]{thakur2024judging}
+Aman~Singh Thakur, Kartik Choudhary, Venkat~Srinik Ramayapally, Sankaran
+  Vaidyanathan, and Dieuwke Hupkes.
+\newblock Judging the judges: Evaluating alignment and vulnerabilities in
+  {LLMs}-as-judges, 2024.
+\newblock URL \url{https://arxiv.org/abs/2406.12624}.
+
+\bibitem[van Miltenburg et~al.(2021)van Miltenburg, van~der Lee, and
+  Krahmer]{vanmiltenburg2021preregistering}
+Emiel van Miltenburg, Chris van~der Lee, and Emiel Krahmer.
+\newblock Preregistering {NLP} research.
+\newblock In \emph{Proceedings of the 2021 Conference of the North American
+  Chapter of the Association for Computational Linguistics: Human Language
+  Technologies}, pages 613--623. Association for Computational Linguistics,
+  2021.
+\newblock URL \url{https://aclanthology.org/2021.naacl-main.51/}.
+
+\bibitem[Wang et~al.(2023)Wang, Li, Chen, Cai, Zhu, Lin, Cao, Liu, Liu, and
+  Sui]{wang2023large}
+Peiyi Wang, Lei Li, Liang Chen, Zefan Cai, Dawei Zhu, Binghuai Lin, Yunbo Cao,
+  Qi~Liu, Tianyu Liu, and Zhifang Sui.
+\newblock Large language models are not fair evaluators, 2023.
+\newblock URL \url{https://arxiv.org/abs/2305.17926}.
+
+\bibitem[Wilson(1927)]{wilson1927probable}
+Edwin~B. Wilson.
+\newblock Probable inference, the law of succession, and statistical inference.
+\newblock \emph{Journal of the American Statistical Association}, 22\penalty0
+  (158):\penalty0 209--212, 1927.
+\newblock URL \url{https://doi.org/10.1080/01621459.1927.10502953}.
+
+\bibitem[Zheng et~al.(2023)Zheng, Chiang, Sheng, Zhuang, Wu, Zhuang, Lin, Li,
+  Li, Xing, Zhang, Gonzalez, and Stoica]{zheng2023judging}
+Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao
+  Zhuang, Zi~Lin, Zhuohan Li, Dacheng Li, Eric~P. Xing, Hao Zhang, Joseph~E.
+  Gonzalez, and Ion Stoica.
+\newblock Judging {LLM}-as-a-judge with {MT}-bench and chatbot arena, 2023.
+\newblock URL \url{https://arxiv.org/abs/2306.05685}.
+
+\bibitem[Zou et~al.(2023)Zou, Wang, Carlini, Nasr, Kolter, and
+  Fredrikson]{zou2023universal}
+Andy Zou, Zifan Wang, Nicholas Carlini, Milad Nasr, J.~Zico Kolter, and Matt
+  Fredrikson.
+\newblock Universal and transferable adversarial attacks on aligned language
+  models, 2023.
+\newblock URL \url{https://arxiv.org/abs/2307.15043}.
+
+\end{thebibliography}

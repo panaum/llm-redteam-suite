@@ -1,8 +1,8 @@
 # Does an Embedding-Similarity Judge Measure Jailbreak Success? A Pre-Registered Validation Against Blind Human Labels
 
-**[AUTHOR NAME]**, [AFFILIATION] <!-- TODO: author details pending -->
+**Anaum Pandit**, Independent researcher, Srinagar, India · anaump7@gmail.com
 
-Pre-registration, data and code: `github.com/panaum/llm-redteam-suite`, branch `judge-validation`.
+Pre-registration, data and code: [github.com/panaum/llm-redteam-suite](https://github.com/panaum/llm-redteam-suite) (branch `main`).
 
 ## Abstract
 
