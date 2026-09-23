@@ -28,6 +28,10 @@ The attack success rates in this README come from the suite's automatic judges. 
 - **The reference labels are weak.** One annotator made all the labels, quickly (median 7 s per item), and also wrote the rubric. Inter-rater reliability was not measured, so the study cannot separate scorer error from error in the human reference.
 - **role_confusion is the one category where the original number looks inflated.** The stored verdicts give 85.4% (41/48 attacks) against 69.7% (23/33) by human label. This is exploratory, and the two 95% intervals overlap.
 
+![Judge validation summary: false-positive and false-negative rates per judge, and Cohen's κ with 95% CIs](validation/judge_validation_summary.png)
+
+*Left: false-positive rate (n = 93 human-labelled non-successes) and false-negative rate (n = 104 human-labelled successes) for each judge. Right: Cohen's κ against the human labels, with 95% bootstrap CIs and the Landis and Koch bands. In the footer, the 34.3% stored-verdict rate is over all 432 logged attacks. On the same 197 sampled items, the stored verdict gives 34.5% (68/197), against 52.8% (104/197) by human label.*
+
 The tables below were not re-labelled cell by cell. The study measures the judge's error; it does not produce corrected per-model figures.
 
 ---

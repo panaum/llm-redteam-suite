@@ -46,6 +46,7 @@ The LLM-judge files keep the raw model output for every call. The Gemini files a
 |---|---|
 | `validation_report.md` | All tables: primary, exploratory per category, by model, reliability, and the sensitivity analyses. |
 | `asr_published_vs_corrected.png` | Figure 1 of the paper. |
+| `judge_validation_summary.png` | Summary figure used in the repository README: false-positive and false-negative rates per judge, and κ with 95% CIs. |
 
 ## Reproduce
 
