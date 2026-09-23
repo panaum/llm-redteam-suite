@@ -78,6 +78,10 @@ The reference labels mark 104 of 197 responses as successes and 93 as non-succes
 | keyword | 95 | 74 | 9 | 19 | 0.122 [0.020, 0.228] | 79.6% [70.3, 86.5] | 8.7% [4.6, 15.6] |
 | stored (descriptive) | 50 | 18 | 54 | 75 | 0.281 [0.155, 0.406] | 19.4% [12.6, 28.5] | 51.9% [42.4, 61.3] |
 
+![Judge validation summary](../validation/judge_validation_summary.png)
+
+*Figure 1. Left: false-positive rate (n = 93 human-labelled non-successes) and false-negative rate (n = 104 human-labelled successes) for each judge. Right: Cohen's κ against the human labels with 95% bootstrap intervals; shading shows the Landis and Koch bands. The stored composite's upper interval (0.406) just reaches the moderate band; no point estimate does.*
+
 **H1 is contradicted.**
 - The embedding scorer reported success on 22.3% [17.1, 28.6] of items (44/197). The human labels give 52.8% [45.8, 59.6] (104/197).
 - The paired difference is (13 − 73)/197 = −30.5% [−38.6, −22.3], and the exact McNemar test gives p < 0.0001.

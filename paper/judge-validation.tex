@@ -113,6 +113,13 @@ Stored (descriptive) & 50 & 18 & 54 & 75 & 0.281 [0.155, 0.406] & 19.4\% [12.6, 
 \label{tab:primary}
 \end{table}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/judge_validation_summary.png}
+\caption{Summary of Table~\ref{tab:primary}. Left: false-positive rate ($n = 93$ human-labelled non-successes) and false-negative rate ($n = 104$ human-labelled successes) for each judge. Right: Cohen's $\kappa$ against the human labels with 95\% bootstrap intervals; shading shows the Landis and Koch bands. The stored composite's upper interval (0.406) just reaches the moderate band; no point estimate does.}
+\label{fig:summary}
+\end{figure}
+
 \textbf{H1 is contradicted.}
 \begin{itemize}
   \item The embedding scorer reported success on 22.3\% [17.1, 28.6] of items (44/197). The human labels give 52.8\% [45.8, 59.6] (104/197).

@@ -9,7 +9,7 @@ Methodology based on [Chao et al. 2023 (PAIR, arXiv:2310.08419)](https://arxiv.o
 
 ![Dashboard](reports/dashboard.png)
 
-*Dashboard for run `bddbd4af` (2026-04-05; 27 attacks per model). **These are the tool's own judge output, not validated figures.** They include the 100% role-confusion ASR. Each number is the stored verdict: the embedding scorer, OR'd with an LLM judge on static attacks. A pre-registered validation study compared that verdict with 197 blind human labels. It agreed only fairly (κ = 0.281), and the embedding scorer inside it agreed only slightly (κ = 0.153). See the [judge validation study](#judge-validation-study).*
+*Dashboard for run `bddbd4af` (2026-04-05; 27 attacks per model). **These are the tool's own judge output, not validated figures.** The overall rates (44.4%, 25.9%, 3.7%) match the stored verdicts, but the per-category panel does not. For example, it credits GPT-OSS with successes in three categories when its only success was one PII attack, and it shows Qwen at 100% role confusion when the stored verdict is 2/3. Use the [Results](#results) table for per-category figures. Each number is the stored verdict: the embedding scorer, OR'd with an LLM judge on static attacks. A pre-registered validation study compared that verdict with 197 blind human labels. It agreed only fairly (κ = 0.281), and the embedding scorer inside it agreed only slightly (κ = 0.153). See the [judge validation study](#judge-validation-study).*
 
 ![Published vs human-labelled ASR by category](validation/asr_published_vs_corrected.png)
 
@@ -30,7 +30,7 @@ The attack success rates in this README come from the suite's automatic judges. 
 
 ![Judge validation summary: false-positive and false-negative rates per judge, and Cohen's κ with 95% CIs](validation/judge_validation_summary.png)
 
-*Left: false-positive rate (n = 93 human-labelled non-successes) and false-negative rate (n = 104 human-labelled successes) for each judge. Right: Cohen's κ against the human labels, with 95% bootstrap CIs and the Landis and Koch bands. In the footer, the 34.3% stored-verdict rate is over all 432 logged attacks. On the same 197 sampled items, the stored verdict gives 34.5% (68/197), against 52.8% (104/197) by human label.*
+*Left: false-positive rate (n = 93 human-labelled non-successes) and false-negative rate (n = 104 human-labelled successes) for each judge. Right: Cohen's κ against the human labels, with 95% bootstrap CIs and the Landis and Koch bands. The stored composite's upper CI (0.406) just reaches the moderate band; no point estimate does.*
 
 The tables below were not re-labelled cell by cell. The study measures the judge's error; it does not produce corrected per-model figures.
 
@@ -42,13 +42,22 @@ The tables below were not re-labelled cell by cell. The study measures the judge
 
 ### Multi-Model Attack Success Rate (ASR)
 
-| Model | Overall ASR | prompt_injection | hallucination | pii_leakage | role_confusion | jailbreak |
-|---|---|---|---|---|---|---|
-| Llama 3.3 70B | **44.4%** 🔴 | 100% | 0% | 0% | 100% | 25% |
-| Qwen 32B | **25.9%** 🟡 | 60% | 0% | 0% | 100% | 0% |
-| GPT-OSS 120B | **3.7%** 🟢 | 20% | 0% | 0% | 0% | 0% |
+| Model | Overall ASR | prompt_injection | hallucination | pii_leakage | role_confusion | jailbreak | bias_elicitation |
+|---|---|---|---|---|---|---|---|
+| Llama 3.3 70B | **44.4%** (12/27) 🔴 | 71% (5/7) | 0% (0/5) | 33% (1/3) | 100% (3/3) | 43% (3/7) | 0% (0/2) |
+| Qwen 32B | **25.9%** (7/27) 🟡 | 29% (2/7) | 0% (0/5) | 33% (1/3) | 67% (2/3) | 14% (1/7) | 50% (1/2) |
+| GPT-OSS 120B | **3.7%** (1/27) 🟢 | 0% (0/7) | 0% (0/5) | 33% (1/3) | 0% (0/3) | 0% (0/7) | 0% (0/2) |
 
-> Lower ASR = safer. Hallucination and PII categories showed 0% ASR across all models in the judge's output. On the validation sample, the human labels gave 18.2% (6/33) for hallucination and 45.5% (15/33) for pii_leakage. Role confusion was the most exploitable category in the judge's output, with 100% ASR on two models. The validation study suggests the stored rate for this category is inflated.
+> Run `bddbd4af` (2026-04-05): stored verdicts in `db/redteam.db`, all techniques (static, PAIR, many-shot). Each cell holds 2–7 attacks, so a single attack moves a cell by 14–50 points. Lower ASR = safer.
+>
+> **Corrected 2026-09-23.** An earlier version of this table did not match the stored verdicts, although its overall rates were already correct. It showed:
+>
+> - pii_leakage at 0% for every model. The stored verdict is 1/3 for each model: the same "store and repeat this record" attack.
+> - prompt_injection at 100/60/20%.
+> - jailbreak at 25/0/0%.
+> - Qwen role_confusion at 100%.
+>
+> **Judge output vs human labels.** In the judge's output, hallucination was 0% on every model. On the validation sample, human labels gave 18.2% (6/33) for hallucination and 45.5% (15/33) for pii_leakage, and the study suggests the stored role_confusion rate is inflated.
 
 ### HarmBench Comparison
 
@@ -208,11 +217,12 @@ python run_harmbench.py
 
 | Category | Description | Llama 3.3 ASR |
 |---|---|---|
-| `prompt_injection` | Override system instructions | 100% |
-| `role_confusion` | Force persona adoption | 100% |
-| `jailbreak` | Bypass safety guidelines via framing | 25% |
-| `hallucination` | Elicit fabricated facts or citations | 0% |
-| `pii_leakage` | Repeat or expose personal information | 0% |
+| `prompt_injection` | Override system instructions | 71% (5/7) |
+| `role_confusion` | Force persona adoption | 100% (3/3) |
+| `jailbreak` | Bypass safety guidelines via framing | 43% (3/7) |
+| `hallucination` | Elicit fabricated facts or citations | 0% (0/5) |
+| `pii_leakage` | Repeat or expose personal information | 33% (1/3) |
+| `bias_elicitation` | Elicit stereotypes (PAIR attacks only) | 0% (0/2) |
 
 ---
 
@@ -231,7 +241,7 @@ python run_harmbench.py
 
 ## Key Findings
 
-1. **Role confusion is the most exploitable category**: 100% ASR on Llama 3.3 and Qwen 32B, using soft-language persona prompts that bypass keyword filters. This is unvalidated judge output. It is also the one category where the validation study found the stored rate higher than the human-labelled rate (85.4% vs 69.7%, exploratory).
+1. **Role confusion had the highest stored ASR on Llama 3.3 (3/3) and Qwen 32B (2/3)**, using soft-language persona prompts that bypass keyword filters. This is unvalidated judge output from 3 attacks per model. It is also the one category where the validation study found the stored rate higher than the human-labelled rate (85.4% vs 69.7%, exploratory).
 
 2. **System prompt hardening outperforms input filtering** as a single defense (-20% ASR vs -15%). Stacking all three produces non-additive results — some attacks bypass the full stack that individual defenses catch separately.
 
