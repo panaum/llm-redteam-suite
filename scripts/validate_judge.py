@@ -39,6 +39,7 @@ FIGURE = VDIR / "asr_published_vs_corrected.png"
 
 RUBRIC_VERSION = "1.0"
 COMPARED_JUDGES = ["embedding", "keyword", "llm"]  # the Bonferroni family
+FOCAL_MODEL = "llama-3.1-8b-instant"  # STUDY_PLAN §7.3: 137 of 197 sampled items
 SKIP_REASONS = {"e": "empty", "l": "language", "p": "payload"}
 
 
@@ -586,6 +587,48 @@ def cmd_analyse(args):
         f"{r}: {sum(1 for i in skipped if ref_labels[i].get('skip_reason') == r)}"
         for r in SKIP_REASONS.values()) or "none"))
     w("")
+
+    # ── By-model sensitivity (STUDY_PLAN §7.3) ──
+    w(f"## 2b. Secondary (indicative), by model: {FOCAL_MODEL} vs the other three")
+    w("")
+    w("**Indicative only.** Declared in plan v1.1 before labelling. Cells are small; no test is "
+      "run between groups, and a difference between them is not read as established.")
+    w("")
+    groups = {FOCAL_MODEL: [t for t, i in enumerate(analysed) if key[i]["model"] == FOCAL_MODEL],
+              "other three models": [t for t, i in enumerate(analysed) if key[i]["model"] != FOCAL_MODEL]}
+    w("| group | judge | n | TP | FP | FN | TN | agreement | κ [95% CI] | FPR (n_neg) | FNR (n_pos) "
+      "| judge ASR | human ASR |")
+    w("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for g, pos in groups.items():
+        if not pos:
+            w(f"| {g} | — | 0 | | | | | | | | | | |")
+            continue
+        gref = [ref[t] for t in pos]
+        for j in [*judges_run, "stored"]:
+            gpred = [int(verdicts[j][analysed[t]]) for t in pos]
+            m = judge_metrics(gref, gpred)
+            kb = st.bootstrap(lambda idx: {"k": st.cohen_kappa([gref[t] for t in idx], [gpred[t] for t in idx])},
+                              len(pos))["k"]
+            k_txt = "undefined" if math.isnan(m["kappa"]) else f"{m['kappa']:.3f} [{kb[0]:.3f}, {kb[1]:.3f}]"
+            w(f"| {g} | {j} | {m['n']} | {m['tp']} | {m['fp']} | {m['fn']} | {m['tn']} | "
+              f"{fmt_p(*m['agreement'])} | {k_txt} | {fmt_p(*m['fpr'])} ({m['n_neg']}) | "
+              f"{fmt_p(*m['fnr'])} ({m['n_pos']}) | {fmt_p(*m['judge_asr'])} | {fmt_p(*m['human_asr'])} |")
+    w("")
+    if "embedding" in verdicts:
+        w("Mechanism by group (embedding scorer; FPR by opener flag among human-no items):")
+        w("")
+        w("| group | FPR, compliant opener | FPR, other opener | difference [95% CI] |")
+        w("|---|---|---|---|")
+        for g, pos in groups.items():
+            gneg = [analysed[t] for t in pos if ref[t] == 0]
+            o1 = [i for i in gneg if opener[i]]
+            o0 = [i for i in gneg if not opener[i]]
+            k1 = sum(verdicts["embedding"][i] for i in o1)
+            k0 = sum(verdicts["embedding"][i] for i in o0)
+            d, lo, hi = st.newcombe_diff(k1, len(o1), k0, len(o0))
+            diff = "n/a" if math.isnan(d) else f"{d:+.1%} [{lo:+.1%}, {hi:+.1%}]"
+            w(f"| {g} | {fmt_w(k1, len(o1))} | {fmt_w(k0, len(o0))} | {diff} |")
+        w("")
 
     # ── Inter-rater ──
     if len(labellers) >= 2:
