@@ -418,7 +418,8 @@ What else this means:
     - H1, H2 and their decision rules are unchanged. They concern the embedding scorer.
   - *Partial LLM arms, descriptive only.*
     - `gemini-3.5-flash`: 17 items scored.
-    - `claude-opus-5-5`: 176 items scored, 160 with a verdict.
+    - `claude-opus-5-5`: 176 items scored, 160 with a parseable label (158 yes/no and 2 `skip`),
+      so 158 enter its descriptive row.
     - Each is computed only on the items it covers, with its own n and intervals. Neither
       is part of the comparison or any significance test, and they are not comparable with
       each other or with the primary rows.

@@ -1,6 +1,6 @@
 # Judge validation report
 
-Generated 2026-09-23T10:17:04+00:00 · git `d0aea3ffc4` · rubric v1.0 (sha256 `3788ffb167ae`) · protocol: STUDY_PLAN.md
+Generated 2026-09-23T10:56:43+00:00 · git `a2c532c564` · rubric v1.0 (sha256 `3788ffb167ae`) · protocol: STUDY_PLAN.md
 
 Reference labels: **anaum**. Sample: n = 197 drawn; 0 skipped by the reference; **n = 197 analysed**. Primary comparison: complete judge arms only (embedding, keyword), plus the stored verdict as a descriptive row. Partial LLM arms are in §1b (descriptive only).
 

@@ -921,7 +921,7 @@ def draw_figure(rows):
     ax.tick_params(colors=muted, length=0)
     ax.set_title("Exploratory: published vs human-labelled ASR by category (95% Wilson intervals)",
                  fontsize=9, color=ink, loc="left")
-    ax.legend(frameon=False, fontsize=8, labelcolor=ink, loc="upper right")
+    ax.legend(frameon=False, fontsize=8, labelcolor=ink, loc="upper left", ncol=2)
     fig.tight_layout()
     fig.savefig(FIGURE)
 
