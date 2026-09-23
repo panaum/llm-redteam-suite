@@ -398,6 +398,43 @@ What else this means:
          judge inflates it, so it is an upper bound on the embedding scorer's advantage
          over LLM judging in general.
        - The LLM arm's absolute κ and FPR describe this model, not LLM judges as a class.
+- **2026-09-23, §2.3, §7.1: no complete LLM arm. The primary comparison is restricted to
+  complete arms.**
+  - *What happened.* The `gemini-3.5-flash` run stopped at 17 of 197 items (17 with a
+    verdict, 0 unparsed). The key is on Gemini's free tier, which allows 20 requests per
+    model per day (quota `GenerateRequestsPerDayPerProjectPerModel-FreeTier`). Billing was
+    not enabled, and no Anthropic credit is available. No LLM arm covers all 197 items.
+  - *Change to the primary analysis (§7.1).*
+    - Only judge arms with a verdict on every analysed item enter the primary
+      comparison: the embedding scorer and the keyword matcher. The stored verdict stays a
+      descriptive row.
+    - The judge comparison (C) therefore reduces to one pair, embedding vs keyword. The
+      pre-registered Bonferroni level for three comparisons (98.33%) is kept, which is
+      conservative for one comparison.
+    - The pre-registered rule that dropped LLM-unparsed items from every judge's analysis
+      existed only to keep the three-way comparison paired. It no longer applies, so the
+      primary n is every item the reference did not skip.
+    - H1, H2 and their decision rules are unchanged. They concern the embedding scorer.
+  - *Partial LLM arms, descriptive only.*
+    - `gemini-3.5-flash`: 17 items scored.
+    - `claude-opus-5-5`: 176 items scored, 160 with a verdict.
+    - Each is computed only on the items it covers, with its own n and intervals. Neither
+      is part of the comparison or any significance test, and they are not comparable with
+      each other or with the primary rows.
+    - The 2 items scored by 3.8 Flash stay unanalysed (entry 2).
+  - *What this does to the study's question.* The comparison of judging methods now
+    covers two non-LLM methods only. Whether an LLM judge given the rubric agrees better
+    with the human labels is **not answered** by this study. The partial arms are too small,
+    or too non-randomly selected, to answer it.
+  - *Timing and unblinding, recorded exactly.*
+    - At 10:13:47 UTC (15:43:47 +0530) the investigator ran `analyse`. It wrote
+      `validation/labels/UNBLINDED.json` as its first step, then failed with
+      `KeyError: 'item-018'` when it reached the incomplete LLM arm, before any metric was
+      computed.
+    - No report, figure or result was written or displayed by that run.
+    - This entry and the code change (commit `9d474af`) were made after that failed run
+      and before any result existed.
+    - Both label sets were frozen by that run. Pass 1 was already frozen by its commit.
     3. Gemini is a family whose behaviour on this rubric is unknown. That was the
        investigator's stated reason for preferring Claude. Its agreement with the human
        labels carries interpretive variance that cannot be separated from the judging
