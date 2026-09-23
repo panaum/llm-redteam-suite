@@ -1,6 +1,6 @@
 # Study Plan: Validating the Attack-Success Judge
 
-**Plan version:** 1.1 · **Rubric version:** 1.0 (`RUBRIC.md`) · see Changelog
+**Plan version:** 1.2 · **Rubric version:** 1.0 (`RUBRIC.md`) · see Changelog
 **Status:** Pre-registered. Frozen at the commit that introduces this file.
 The analysis is implemented in `scripts/validate_judge.py`, `scripts/judges.py` and
 `scripts/judge_stats.py` at the same commit. Those files are part of the pre-registration.
@@ -117,21 +117,44 @@ alongside the others. It is **not** part of the comparison family in C.
   labellers do not open. This is enforced by discipline, not by the file system.
 - `label --labeller NAME` shows one item at a time with no verdict. It records y/n/skip
   and saves after every keystroke, with the rubric sha256 and the sample sha256.
-- Two labellers work independently. Neither sees the other's file before both have
-  finished.
+- **Pass 1** (labels `anaum`, commit `3f1eb7b`) used the original screen. That screen
+  printed the whole item at once, so on a long item the terminal scrolled and mostly the
+  end of the response was visible.
+- **Pass 2** (labels `anaum-pass2`) uses a paged screen, added in v1.2:
+  - The prompt and the full response are wrapped and shown page by page.
+  - The label keys (y/n/skip) are refused until **every page has been displayed** and a
+    **minimum reading time** has passed since the item appeared. The minimum is
+    max(4 s, 0.02 s × characters in prompt + response), i.e. 50 characters per second.
+    That is a skim-speed floor, not a target: it stops labelling from a glance and does
+    not guarantee careful reading.
+  - Each label records the time spent (`dwell_s`), the page count, the character count
+    and the floor that applied.
+- Pass 2 uses a different item order from pass 1 (the order is derived from the label-set
+  name).
 
-## 5. Reference label
+## 5. Reference label (v1.2: single annotator, two passes)
 
-1. Human–human agreement (raw agreement and Cohen's κ, with intervals) is computed on the
-   independent labels before any discussion (`consensus` prints it first).
-2. Disagreements are resolved by discussion under the rubric. The consensus labels are
-   stored in `labels_consensus.json`, and the independent files are not edited.
-3. The consensus is the reference for all judge comparisons. Each judge is also compared
-   with each labeller separately, as a sensitivity check.
-4. The second labeller is a member of the QA team who has read the rubric and has not
-   seen the scorer's verdicts. If no second labeller is available, the first labeller's
-   labels are the reference. The report must then state plainly that inter-rater
-   reliability was not measured and that this is the study's main limitation.
+No second labeller was available. The consensus protocol of v1.0/v1.1 (independent
+labels, then discussion) does not apply.
+
+1. **Pass 2 is the reference** for every judge comparison and every hypothesis test.
+2. **Why pass 2 exists.** Pass 1 was completed too fast to reflect the criterion. The
+   median was 7 s per item. The median item is about 1,000 characters (prompt plus
+   response), and 37 items with responses over 1,000 characters were labelled in 5 s or
+   less (§10). Those labels cannot reflect the content of the items, which is what the
+   rubric asks for. Pass 1 is committed unchanged as a record and is not edited.
+3. **Pass 1 is a sensitivity analysis.** The headline metrics (κ, FPR, judge ASR − human
+   ASR for every judge, and the H2 split for the embedding scorer) are recomputed with
+   pass 1 as the reference and reported beside the pass 2 results.
+4. **Intra-rater reliability.** Agreement between pass 1 and pass 2 is reported as raw
+   agreement (Wilson) and Cohen's κ (bootstrap interval), with the number of y→n and n→y
+   changes.
+   - *Caveat:* the same annotator saw every item in pass 1. Memory of those labels
+     inflates the agreement, so it is an upper bound on test–retest reliability.
+   - It is not a substitute for inter-rater reliability. It also mixes a change of
+     screen with a change of care, so it cannot separate the two.
+5. Both passes are by the same annotator, who does not see pass 1 labels during pass 2.
+   The pass 1 file is not opened while labelling.
 
 ## 6. Mechanism flag: compliant-register opening
 
@@ -252,8 +275,9 @@ What else this means:
 
 ## 9. Freezing, unblinding and deviations
 
+- Pass 1 is frozen by its commit (`3f1eb7b`), made before any unblinding.
 - Running `analyse` writes `validation/labels/UNBLINDED.json`. After that, `label` refuses
-  to change that labeller's file.
+  to change any label file, including pass 2.
 - The finite-population correction is not applied. Sampling 33 of each category's rows
   makes the Wilson intervals conservative. This is noted, not corrected.
 - Every deviation from this plan (a changed lexicon, changed judge model, re-draw, category
@@ -274,12 +298,52 @@ What else this means:
   - *What was seen:* the model composition of the sample, which is data but not outcome
     data. That, and nothing else, motivated this amendment.
   - *Scope:* the confirmatory analyses (§1, §7.1) are unchanged.
+- **1.2**: single annotator, two passes.
+  - *Timing:* after pass 1 was completed and committed (`3f1eb7b`), and before pass 2
+    began. No verdicts or judge outputs had been viewed by the annotator, and `analyse`
+    had not been run. The keyword and embedding judges had been run into
+    `validation/.hidden/`, unviewed.
+  - *What was seen:* only the pass 1 label timestamps, set against item lengths from the
+    sample. The distribution of pass 1 label values was not examined.
+  - *What changed:*
+    - §5: the consensus protocol is replaced. Pass 2 is the reference, pass 1 is a
+      sensitivity analysis, and intra-rater reliability is reported with its caveat.
+    - §4: the paged labelling screen with a minimum reading time is added.
+    - §9 and §10: the single-annotator limitation, stated as the principal limitation,
+      and a verbatim record of the pass 1 timing.
+  - *Why:* no second labeller was available, and pass 1's speed means its labels cannot
+    reflect the item content the rubric asks about.
+  - *Unchanged:* the confirmatory analyses (§1, §7.1), the rubric, the sample and the
+    judges.
 
 ## 10. Limitations recorded in advance
 
-- The labeller is the tool's author and holds H1. The expected bias favours finding
-  register errors. Blinding to verdicts limits this but does not remove it. A second,
-  independent labeller is the main defence.
+- **Principal limitation: one annotator, and inter-rater reliability was not measured.**
+  Every label comes from one person. That person also wrote the rubric, ran the original
+  experiments, built the scorer under test and holds H1. The labels therefore reflect one
+  person's reading of a criterion that same person wrote. The study cannot show that a
+  second person applying the rubric would reach the same labels.
+  - What mitigates this, only partially: the rubric was pre-registered before the data
+    was inspected, items were presented blind to category, model and every verdict, and
+    two passes let intra-rater agreement be reported (§5.4).
+  - What none of these do: they do not measure or remove the annotator's own
+    interpretation, and they do not remove expectancy effects. Such effects would favour
+    labelling compliant-sounding responses as **no**, which would favour H1.
+- **Pass 1 was labelled too fast to reflect the criterion.** Recorded from the pass 1
+  label timestamps, before unblinding:
+  - median 7 s per item, interquartile range 3–16 s;
+  - 37 items with responses over 1,000 characters labelled in 5 s or less, including
+    responses of about 6,000 characters in 2–3 s;
+  - the fast items were not the short ones: items labelled in 5 s or less had a longer
+    median response (693 characters) than items labelled in 6–15 s (234 characters).
+
+  Labels made this fast may reflect how a response opens rather than what it contains.
+  That is the register-based judgement H1 attributes to the embedding scorer, so a
+  reference built this way would bias the scorer's agreement upward and push H1 toward
+  the null. This is why pass 2 exists (§5.2), and why pass 1 is kept only as a
+  sensitivity analysis.
+- The reading floor in pass 2 prevents labelling from a glance. It does not guarantee
+  that each item was read carefully. Pass 2 time per item is reported.
 - The opener lexicon's recall and precision are not measured. H2 tests "the lexicon's
   notion of compliant opening", not the construct in general.
 - The LLM judge reads attack text and can itself be prompt-injected by a response. Its
