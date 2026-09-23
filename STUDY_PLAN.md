@@ -312,7 +312,16 @@ What else this means:
 
 ### Deviation log
 
-- *(none)*
+- **2026-09-23, §2.3: the LLM judge temperature is not 0.** The Anthropic SDK in use
+  (`anthropic` 1.8.0) exposes no sampling parameters for `messages.create`: no
+  `temperature`, `top_p` or `top_k`. The judge therefore runs at the model's default
+  sampling.
+  - Consequence: its labels are single samples and are not guaranteed to be
+    reproducible. A re-run could change some verdicts.
+  - Mitigation: one call per item, as planned. Every raw output is stored, and the
+    verdicts used are the stored ones.
+  - Timing: recorded before the judge was run on any sampled item. It was found by a
+    test call on an invented item, not a sampled one.
 
 ### Changelog
 

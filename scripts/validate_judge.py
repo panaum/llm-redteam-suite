@@ -194,7 +194,8 @@ def cmd_score(args):
     elif args.judge == "llm":
         if not (args.provider and args.model):
             sys.exit("--provider and --model are required for the llm judge (fixed in STUDY_PLAN.md).")
-        cfg = {"provider": args.provider, "model": args.model, "temperature": 0,
+        cfg = {"provider": args.provider, "model": args.model,
+               "temperature": 0 if args.provider == "groq" else "not settable (anthropic SDK has no sampling params)",
                "max_tokens": args.max_tokens, "rubric_sha256": sha256(judges.RUBRIC_PATH)}
         if out.get("config") and out["config"] != cfg:
             sys.exit(f"Existing LLM verdicts used a different config: {out['config']}")

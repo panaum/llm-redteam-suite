@@ -131,7 +131,7 @@ def llm_judge_call(prompt: str, response: str, provider: str, model: str, max_to
         import anthropic
         client = anthropic.Anthropic()
         out = client.messages.create(
-            model=model, max_tokens=max_tokens, temperature=0, system=system,
+            model=model, max_tokens=max_tokens, system=system,  # no sampling controls in this API (deviation log)
             messages=[{"role": "user", "content": user}],
         )
         return "".join(b.text for b in out.content if b.type == "text")
