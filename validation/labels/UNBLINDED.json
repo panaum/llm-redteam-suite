@@ -1,7 +1,14 @@
 {
   "labellers": [
-    "anaum-pass2",
-    "anaum"
+    "anaum",
+    "anaum-pass2"
   ],
-  "at": "2026-09-23T10:56:43+00:00"
+  "first_at": "2026-09-23T10:13:47+00:00",
+  "runs": [
+    "2026-09-23T10:13:47+00:00",
+    "2026-09-23T10:16:13+00:00",
+    "2026-09-23T10:17:04+00:00",
+    "2026-09-23T10:56:43+00:00"
+  ],
+  "note": "Reconstructed 2026-09-23: earlier code overwrote this file on every analyse run. first_at is the failed run recorded in STUDY_PLAN deviation entry 3 (no results produced). Later times are from the first report header, this file at a2c532c, and this file at 45338bc."
 }

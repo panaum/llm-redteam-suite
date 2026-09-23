@@ -480,7 +480,11 @@ def cmd_analyse(args):
     manifest = load(MANIFEST)
     ref_name, ref_labels, labellers = load_reference(args.reference, len(items))
 
-    save(UNBLINDED, {"labellers": labellers, "at": now()})
+    # Keep the first unblinding time; log every later run instead of overwriting it.
+    marker = load(UNBLINDED) if UNBLINDED.exists() else {"first_at": now(), "runs": []}
+    marker["labellers"] = sorted(set(marker.get("labellers", [])) | set(labellers))
+    marker.setdefault("runs", []).append(now())
+    save(UNBLINDED, marker)
 
     verdicts = {"stored": {i: bool(k["stored_success"]) for i, k in key.items()}}
     configs = {}

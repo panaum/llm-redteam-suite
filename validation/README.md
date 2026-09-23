@@ -26,7 +26,7 @@ Data for *Does an Embedding-Similarity Judge Measure Jailbreak Success? A Pre-Re
 |---|---|
 | `labels/labels_anaum.json` | **Reference labels.** All 197 items, labelled blind by one annotator under rubric v1.0, with a timestamp per label. This is pass 1, committed unchanged in `3f1eb7b` before unblinding. |
 | `labels/labels_anaum-pass2.json` | An abandoned second pass: 2 of 197 items. It is recorded but not analysed (plan §5). |
-| `labels/UNBLINDED.json` | The time `analyse` first ran, after which the label files were frozen. |
+| `labels/UNBLINDED.json` | `first_at`: when `analyse` first ran, after which the label files were frozen; `runs`: every later run. The file was reconstructed once (see its `note`). |
 
 ## Judge outputs (`.hidden/`)
 
