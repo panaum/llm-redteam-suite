@@ -324,7 +324,7 @@ What else this means:
     verdicts used are the stored ones.
   - Timing: recorded before the judge was run on any sampled item. It was found by a
     test call on an invented item, not a sampled one.
-- **2026-09-23, §2.3: LLM judge substituted (Gemini `gemini-3.8-flash`), and the token cap
+- **2026-09-23, §2.3: LLM judge substituted (Gemini `gemini-3.5-flash`), and the token cap
   raised to 16,384.**
   - *What happened to the Claude run.* It stopped at 176 of 197 items when the Anthropic
     account ran out of credit. 16 of the 176 outputs had no parseable label: 12 ended
@@ -344,10 +344,22 @@ What else this means:
     - `gemini-2.5-pro` met both, but the API refused it ("no longer available to new
       users").
     - Every available Pro model is a preview.
-    - `gemini-3.8-flash` is the newest pinned, non-preview model, so it is the judge.
+    - `gemini-3.8-flash`, the newest pinned non-preview model, was chosen first. Test
+      calls on two invented items returned the expected labels, with finish reason STOP
+      and 57–223 reasoning tokens each.
     - Gemini is outside all target families.
-    - Test calls on two invented items returned the expected labels, with finish reason
-      STOP and 57–223 reasoning tokens each.
+  - *Second substitution: `gemini-3.8-flash` → `gemini-3.5-flash`, driven by service
+    availability, not by model choice.*
+    - The 3.8 Flash run completed 2 of 197 items. The API then returned 503 "high demand"
+      on nearly every call, and at that pace the run would have taken about 9 hours.
+    - Probes without retries on an invented item: `gemini-3.8-flash` and
+      `gemini-3.7-flash` returned 503 three times out of three. `gemini-3.5-flash`
+      answered three times out of three in about 4 s, with the expected label and finish
+      reason STOP.
+    - The 2 items scored by 3.8 Flash are archived as
+      `validation/.hidden/judge_llm_gemini38_partial.json` and not analysed. All 197
+      items are re-run on 3.5 Flash under the single configuration below.
+    - No verdict from the 3.8 Flash items was viewed.
   - *Protocol.*
     - All 197 items run under one configuration: temperature 0 and
       `max_output_tokens` 16,384. On Gemini that cap includes reasoning tokens, so it is
@@ -375,8 +387,17 @@ What else this means:
   - *Consequences:*
     1. The §10 note about a Claude judge sharing the rubric drafter's defaults no longer
        applies to the primary LLM arm. It still applies to the partial Claude row.
-    2. The judge is a Flash-tier model. Pro-tier models were unavailable or preview-only,
-       so the LLM arm may understate what a stronger LLM judge would achieve.
+    2. The judge is a Flash-tier model, and an older one: 3.5 Flash rather than the
+       newest 3.8. It is **probably a weaker judge** than the models it replaced, although
+       that is assumed, not tested. Pro-tier models were unavailable or preview-only. A
+       weaker judge biases the LLM arm's agreement with the human labels **downward**.
+       The effect on comparisons depends on direction:
+       - A gap **in the LLM arm's favour** (e.g. κ(llm) > κ(embedding)) is conservative:
+         a stronger judge would probably widen it.
+       - A gap **in the embedding scorer's favour** is **not** conservative: a weak LLM
+         judge inflates it, so it is an upper bound on the embedding scorer's advantage
+         over LLM judging in general.
+       - The LLM arm's absolute κ and FPR describe this model, not LLM judges as a class.
     3. Gemini is a family whose behaviour on this rubric is unknown. That was the
        investigator's stated reason for preferring Claude. Its agreement with the human
        labels carries interpretive variance that cannot be separated from the judging
