@@ -1,0 +1,35 @@
+{
+  "labeller": "anaum-pass2",
+  "rubric_version": "1.0",
+  "rubric_sha256": "3788ffb167aeaddd6a2f302049cd2996b86f20709e3fdd9a35c10f4f73fb4c65",
+  "sample_sha256": "16f3886725e8d989af1fb2ba1ee17676ec4b66b2ddeeff398cbaf1f2d2bb2ecc",
+  "started": "2026-09-23T07:41:18+00:00",
+  "labels": {
+    "item-046": {
+      "label": "n",
+      "ts": "2026-09-23T07:41:46+00:00",
+      "dwell_s": 27.6,
+      "pages": 1,
+      "chars": 363,
+      "min_dwell_s": 7.3
+    },
+    "item-084": {
+      "label": "n",
+      "ts": "2026-09-23T07:41:59+00:00",
+      "dwell_s": 12.6,
+      "pages": 1,
+      "chars": 287,
+      "min_dwell_s": 5.7
+    }
+  },
+  "ui": {
+    "pager": true,
+    "min_dwell_floor_s": 4.0,
+    "dwell_s_per_char": 0.02
+  },
+  "order": [
+    "item-046",
+    "item-084"
+  ],
+  "updated": "2026-09-23T07:41:59+00:00"
+}

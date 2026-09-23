@@ -1,6 +1,6 @@
 # Study Plan: Validating the Attack-Success Judge
 
-**Plan version:** 1.2 · **Rubric version:** 1.0 (`RUBRIC.md`) · see Changelog
+**Plan version:** 1.3 · **Rubric version:** 1.0 (`RUBRIC.md`) · see Changelog
 **Status:** Pre-registered. Frozen at the commit that introduces this file.
 The analysis is implemented in `scripts/validate_judge.py`, `scripts/judges.py` and
 `scripts/judge_stats.py` at the same commit. Those files are part of the pre-registration.
@@ -120,7 +120,8 @@ alongside the others. It is **not** part of the comparison family in C.
 - **Pass 1** (labels `anaum`, commit `3f1eb7b`) used the original screen. That screen
   printed the whole item at once, so on a long item the terminal scrolled and mostly the
   end of the response was visible.
-- **Pass 2** (labels `anaum-pass2`) uses a paged screen, added in v1.2:
+- **Pass 2** (labels `anaum-pass2`; abandoned after 2 items under v1.3, see §5) uses a paged
+  screen, added in v1.2:
   - The prompt and the full response are wrapped and shown page by page.
   - The label keys (y/n/skip) are refused until **every page has been displayed** and a
     **minimum reading time** has passed since the item appeared. The minimum is
@@ -132,29 +133,36 @@ alongside the others. It is **not** part of the comparison family in C.
 - Pass 2 uses a different item order from pass 1 (the order is derived from the label-set
   name).
 
-## 5. Reference label (v1.2: single annotator, two passes)
+## 5. Reference label (v1.3: single annotator, pass 1)
 
-No second labeller was available. The consensus protocol of v1.0/v1.1 (independent
-labels, then discussion) does not apply.
+No second labeller was available, so the consensus protocol of v1.0/v1.1 does not apply.
+The two-pass protocol of v1.2 was abandoned.
 
-1. **Pass 2 is the reference** for every judge comparison and every hypothesis test.
-2. **Why pass 2 exists.** Pass 1 was completed too fast to reflect the criterion. The
-   median was 7 s per item. The median item is about 1,000 characters (prompt plus
-   response), and 37 items with responses over 1,000 characters were labelled in 5 s or
-   less (§10). Those labels cannot reflect the content of the items, which is what the
-   rubric asks for. Pass 1 is committed unchanged as a record and is not edited.
-3. **Pass 1 is a sensitivity analysis.** The headline metrics (κ, FPR, judge ASR − human
-   ASR for every judge, and the H2 split for the embedding scorer) are recomputed with
-   pass 1 as the reference and reported beside the pass 2 results.
-4. **Intra-rater reliability.** Agreement between pass 1 and pass 2 is reported as raw
-   agreement (Wilson) and Cohen's κ (bootstrap interval), with the number of y→n and n→y
-   changes.
-   - *Caveat:* the same annotator saw every item in pass 1. Memory of those labels
-     inflates the agreement, so it is an upper bound on test–retest reliability.
-   - It is not a substitute for inter-rater reliability. It also mixes a change of
-     screen with a change of care, so it cannot separate the two.
-5. Both passes are by the same annotator, who does not see pass 1 labels during pass 2.
-   The pass 1 file is not opened while labelling.
+1. **Pass 1 (`labels_anaum.json`, commit `3f1eb7b`) is the reference** for every judge
+   comparison and every hypothesis test.
+2. **Decision and rationale.** On 2026-09-23 the investigator decided not to conduct
+   pass 2 and to use pass 1 as the reference. No further reason was recorded.
+   - Pass 2 had started at 13:11 (+0530) under the paged screen, and 2 of 197 items were
+     labelled before it stopped.
+   - That file (`labels_anaum-pass2.json`) is committed unchanged as a record. It is not
+     analysed: 2 items cannot estimate anything.
+3. **What this means for every result.** The reference is the label set that §10 of this
+   plan records as completed too fast to reflect item content. The v1.2 reasons for
+   replacing it (§10, kept verbatim) still apply and are not withdrawn. Every result is
+   conditional on these labels. Two distortions are possible, and the data cannot tell
+   them apart:
+   - **Noise.** Labels given without reading are partly random. That pulls every judge's
+     κ toward 0, makes differences between judges harder to detect, and adds noise to
+     FPR and to judge ASR − human ASR.
+   - **Register-tracking.** Labels given from how a response opens would agree with a
+     register-sensitive judge. That inflates the embedding scorer's agreement and lowers
+     its apparent FPR, pushing H1 and H2 toward the null.
+4. **No intra-rater reliability** is available (pass 2 was not conducted) and **no
+   inter-rater reliability** is available (no second labeller). The reference labels have
+   no reliability estimate of any kind.
+5. **Replacement sensitivity analysis** (§7.4), declared here before unblinding: the
+   primary metrics restricted to items whose pass 1 labelling time met the v1.2 reading
+   floor.
 
 ## 6. Mechanism flag: compliant-register opening
 
@@ -232,6 +240,24 @@ therefore also reported for two groups: that model, and the other three models c
   fewer human-**no** items. Every cell carries n and an interval. No significance test is
   run between the groups, and a difference between them is not read as established.
 - No split by individual model: the non-focal models give 12–26 items each.
+
+### 7.4 Secondary: timing-restricted sensitivity check (added in v1.3, before unblinding)
+The primary metrics are recomputed on the items whose pass 1 labelling time met the v1.2
+reading floor. Pass 1 time is the gap between successive label saves; the first item is
+timed from the session start. The floor is max(4 s, 0.02 s × characters in prompt +
+response). **63 of 197** items qualify. This count was computed from timestamps and item
+lengths only, not from any label value.
+
+- **Reported for each judge:** n, κ, agreement, FPR (n_neg), and judge ASR − human ASR.
+  The H2 split for the embedding scorer is also reported.
+- **Selection:** by labelling time, not by outcome. The subset is not random, though:
+  longer items needed more time to qualify, so the subset is expected to lean toward
+  shorter items. The report gives its median length next to the full sample's.
+- **Indicative only.** No test is run between this subset and the full sample.
+- **What it can and cannot show.** If the headline results hold on this subset, they
+  do not depend only on the fastest labels. If they differ, the fastest labels are
+  shaping the result, but the subset cannot say which of the two distortions in §5.3 is
+  responsible.
 
 ## 8. Precision statement (a priori)
 
@@ -315,6 +341,20 @@ What else this means:
     reflect the item content the rubric asks about.
   - *Unchanged:* the confirmatory analyses (§1, §7.1), the rubric, the sample and the
     judges.
+- **1.3**: pass 1 is the reference; pass 2 is abandoned.
+  - *Timing:* before unblinding. `analyse` had not been run, and no judge verdict had
+    been viewed by the annotator. The Claude judge had not yet been run.
+  - *Decision:* the investigator's. No reason beyond the decision itself was recorded
+    (§5.2).
+  - *What was seen:* the pass 2 file's progress (2/197 items) and its dwell times, but
+    not its label values. The count of pass 1 items meeting the reading floor (63/197),
+    from timestamps and item lengths only. No label values from either pass.
+  - *What changed:*
+    - §5 rewritten: pass 1 is the reference, and the consequences are stated.
+    - §7.4 added: the timing-restricted sensitivity check.
+    - §10: a note added. The pass 1 timing record is kept verbatim.
+  - *Unchanged:* the confirmatory analyses and decision rules (§1, §7.1), the rubric, the
+    sample and the judges.
 
 ## 10. Limitations recorded in advance
 
@@ -342,8 +382,18 @@ What else this means:
   reference built this way would bias the scorer's agreement upward and push H1 toward
   the null. This is why pass 2 exists (§5.2), and why pass 1 is kept only as a
   sensitivity analysis.
-- The reading floor in pass 2 prevents labelling from a glance. It does not guarantee
-  that each item was read carefully. Pass 2 time per item is reported.
+- *(v1.2; moot under v1.3, since pass 2 was not conducted.)* The reading floor in pass 2
+  prevents labelling from a glance. It does not guarantee that each item was read
+  carefully. Pass 2 time per item is reported.
+- **v1.3: the reference is pass 1 despite the record above.** The pass 1 timing record is
+  kept verbatim. Its last sentence describes the v1.2 plan, which v1.3 reverses: pass 1 is
+  now the reference, not a sensitivity analysis.
+  - The reference labels have no reliability estimate of any kind: no second labeller
+    and no second pass (§5.4).
+  - Every result is conditional on labels that this plan itself judged too fast to
+    reflect item content, and on the distortions described in §5.3.
+  - The timing-restricted check (§7.4) is the only partial check available.
+  - A reader should treat the confirmatory results of this study as provisional.
 - The opener lexicon's recall and precision are not measured. H2 tests "the lexicon's
   notion of compliant opening", not the construct in general.
 - The LLM judge reads attack text and can itself be prompt-injected by a response. Its

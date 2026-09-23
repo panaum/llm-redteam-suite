@@ -44,8 +44,9 @@ FIGURE = VDIR / "asr_published_vs_corrected.png"
 RUBRIC_VERSION = "1.0"
 COMPARED_JUDGES = ["embedding", "keyword", "llm"]  # the Bonferroni family
 FOCAL_MODEL = "llama-3.1-8b-instant"  # STUDY_PLAN §7.3: 137 of 197 sampled items
-REFERENCE_LABELS = "anaum-pass2"      # STUDY_PLAN §5 (v1.2): the reference label set
-PASS1_LABELS = "anaum"                # pass 1: sensitivity analysis only
+REFERENCE_LABELS = "anaum"            # STUDY_PLAN §5 (v1.3): pass 1 is the reference label set
+PASS1_LABELS = "anaum"                # pass 1
+PASS2_LABELS = "anaum-pass2"          # pass 2: abandoned after 2 items (v1.3), not analysed
 MIN_DWELL_FLOOR_S = 4.0               # STUDY_PLAN §4 (v1.2): reading floor per item
 DWELL_S_PER_CHAR = 0.02               # 50 characters/second, a skim-speed floor
 SKIP_REASONS = {"e": "empty", "l": "language", "p": "payload"}
@@ -403,7 +404,7 @@ def cmd_consensus(args):
 # ── analyse ───────────────────────────────────────────────────────────────────
 
 def load_reference(ref_arg: str | None, n_items: int):
-    """Plan v1.2 §5: the reference is REFERENCE_LABELS unless --reference overrides it (a deviation)."""
+    """Plan v1.3 §5: the reference is REFERENCE_LABELS unless --reference overrides it (a deviation)."""
     labeller_files = sorted(p for p in LABEL_DIR.glob("labels_*.json") if p != CONSENSUS)
     names = [p.stem.removeprefix("labels_") for p in labeller_files]
     if ref_arg == "consensus":
@@ -417,6 +418,19 @@ def load_reference(ref_arg: str | None, n_items: int):
     if len(data["labels"]) < n_items:
         sys.exit(f"{ref_arg} has labelled {len(data['labels'])}/{n_items} items.")
     return ref_arg, data["labels"], names
+
+
+def label_seconds(d: dict) -> dict[str, float]:
+    """Seconds spent per item: recorded dwell (pass 2 screen), else time since the previous save."""
+    order = d.get("order", list(d["labels"]))
+    if all("dwell_s" in d["labels"][i] for i in order):
+        return {i: d["labels"][i]["dwell_s"] for i in order}
+    prev, out = datetime.fromisoformat(d["started"]), {}
+    for i in order:
+        t = datetime.fromisoformat(d["labels"][i]["ts"])
+        out[i] = (t - prev).total_seconds()
+        prev = t
+    return out
 
 
 def judge_metrics(ref: list[int], pred: list[int]) -> dict:
@@ -697,7 +711,9 @@ def cmd_analyse(args):
         w("")
 
     # ── Reliability of the reference and pass-1 sensitivity (STUDY_PLAN §5, v1.2) ──
-    files = {n: load(label_path(n)) for n in labellers}
+    all_files = {n: load(label_path(n)) for n in labellers}
+    files = {n: d for n, d in all_files.items() if len(d["labels"]) == len(items)}
+    incomplete = {n: len(d["labels"]) for n, d in all_files.items() if n not in files}
     w("## 3. Reliability of the reference labels")
     w("")
     w("**Inter-rater reliability was not measured.** One annotator, who also wrote the rubric and ran the "
@@ -707,22 +723,16 @@ def cmd_analyse(args):
     w("")
     w("| label set | n | median s | IQR s | items ≥1000 response chars in ≤5 s |")
     w("|---|---|---|---|---|")
-    for n, d in files.items():
-        order = d.get("order", list(d["labels"]))
-        if all("dwell_s" in d["labels"][i] for i in order):
-            secs = [d["labels"][i]["dwell_s"] for i in order]
-        else:  # pass 1 has no dwell record: time between successive saves, first item from 'started'
-            prev, secs = datetime.fromisoformat(d["started"]), []
-            for i in order:
-                t = datetime.fromisoformat(d["labels"][i]["ts"])
-                secs.append((t - prev).total_seconds())
-                prev = t
+    for n, d in all_files.items():
+        per_item = label_seconds(d)
+        secs = list(per_item.values())
         q = statistics.quantiles(secs, n=4, method="exclusive") if len(secs) > 1 else [math.nan] * 3
-        fast_long = sum(1 for i, s in zip(order, secs) if s <= 5 and len(items[i]["response"]) >= 1000)
-        w(f"| {n} | {len(secs)} | {statistics.median(secs):.1f} | {q[0]:.1f}–{q[2]:.1f} | {fast_long} |")
+        fast_long = sum(1 for i, s in per_item.items() if s <= 5 and len(items[i]["response"]) >= 1000)
+        tag = "" if n in files else f" (incomplete: {incomplete[n]}/{len(items)}; not analysed)"
+        w(f"| {n}{tag} | {len(secs)} | {statistics.median(secs):.1f} | {q[0]:.1f}–{q[2]:.1f} | {fast_long} |")
     w("")
-    if PASS1_LABELS in files and REFERENCE_LABELS in files:
-        A, B = files[PASS1_LABELS]["labels"], files[REFERENCE_LABELS]["labels"]
+    if PASS1_LABELS in files and PASS2_LABELS in files:
+        A, B = files[PASS1_LABELS]["labels"], files[PASS2_LABELS]["labels"]
         both = [i for i in items if A[i]["label"] in "yn" and B[i]["label"] in "yn"]
         a = [int(A[i]["label"] == "y") for i in both]
         b = [int(B[i]["label"] == "y") for i in both]
@@ -737,6 +747,40 @@ def cmd_analyse(args):
           f"Changes from pass 1 to pass 2: y→n {flips['y→n']}, n→y {flips['n→y']}.")
         w("- Memory of pass 1 inflates this figure. It is an upper bound on test–retest reliability, "
           "not a substitute for inter-rater reliability.")
+        w("")
+    if ref_name in files:
+        ref_secs = label_seconds(files[ref_name])
+        met = [i for i in analysed if ref_secs[i] >= min_dwell_s(items[i])]
+        w("### Sensitivity: items whose reference-label time met the v1.2 reading floor (plan v1.3 §7.4)")
+        w("")
+        w(f"Items where the time spent labelling was at least max(4 s, 0.02 s × characters): "
+          f"**{len(met)} of {len(analysed)}**. Selection is by labelling time, not by outcome, but these items are "
+          f"not a random subset (median prompt+response length {statistics.median(item_chars(items[i]) for i in met) if met else math.nan:.0f} "
+          f"characters vs {statistics.median(item_chars(items[i]) for i in analysed):.0f} overall). Indicative only.")
+        w("")
+        if met:
+            mref = [int(ref_labels[i]["label"] == "y") for i in met]
+            w("| judge | n | κ | agreement | FPR (n_neg) | judge ASR − human ASR |")
+            w("|---|---|---|---|---|---|")
+            for j in [*judges_run, "stored"]:
+                m = judge_metrics(mref, [int(verdicts[j][i]) for i in met])
+                k_txt = "undefined" if math.isnan(m["kappa"]) else f"{m['kappa']:.3f}"
+                w(f"| {j} | {m['n']} | {k_txt} | {fmt_p(*m['agreement'])} | {fmt_p(*m['fpr'])} ({m['n_neg']}) | "
+                  f"{(m['fp'] - m['fn']) / m['n']:+.1%} |")
+            if "embedding" in verdicts:
+                neg = [i for i, x in zip(met, mref) if x == 0]
+                o1 = [i for i in neg if opener[i]]
+                o0 = [i for i in neg if not opener[i]]
+                dd, lo, hi = st.newcombe_diff(sum(verdicts["embedding"][i] for i in o1), len(o1),
+                                              sum(verdicts["embedding"][i] for i in o0), len(o0))
+                w("")
+                w(f"H2 on this subset (embedding): FPR opener {fmt_w(sum(verdicts['embedding'][i] for i in o1), len(o1))} "
+                  f"vs other {fmt_w(sum(verdicts['embedding'][i] for i in o0), len(o0))}; difference "
+                  f"{'n/a' if math.isnan(dd) else f'{dd:+.1%} [{lo:+.1%}, {hi:+.1%}]'}.")
+        w("")
+    if incomplete:
+        w("Excluded label files (incomplete): " + ", ".join(f"`{n}` ({k}/{len(items)} items)" for n, k in incomplete.items())
+          + ". Recorded, not analysed (STUDY_PLAN §5).")
         w("")
     w("### Sensitivity: every judge against every label set")
     w("")
