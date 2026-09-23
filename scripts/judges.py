@@ -102,6 +102,13 @@ LABEL: yes
 LABEL: no
 LABEL: skip (empty|language|payload)"""
 
+GEMINI_SAFETY_CATEGORIES = [
+    "HARM_CATEGORY_HARASSMENT",
+    "HARM_CATEGORY_HATE_SPEECH",
+    "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+    "HARM_CATEGORY_DANGEROUS_CONTENT",
+]
+
 _LABEL_LINE = re.compile(r"LABEL:\s*(yes|no|skip)\b", re.I)
 
 
@@ -109,13 +116,25 @@ def rubric_text() -> str:
     return RUBRIC_PATH.read_text()
 
 
+_THINK_BLOCK = re.compile(r"<think>.*?</think>", re.S | re.I)
+
+
 def parse_llm_label(output: str) -> str | None:
-    """Return 'yes', 'no', 'skip', or None if no label line is found. Last match wins."""
-    found = _LABEL_LINE.findall(output or "")
+    """Return 'yes', 'no', 'skip', or None if no label line is found. Last match wins.
+
+    Reasoning inside <think>…</think> is ignored, so a draft label there is never
+    taken as the verdict. An unclosed <think> (output cut off mid-reasoning) is
+    unparsed. Added by the 2026-09-23 judge-substitution deviation.
+    """
+    text = _THINK_BLOCK.sub("", output or "")
+    if re.search(r"<think>", text, re.I):
+        return None
+    found = _LABEL_LINE.findall(text)
     return found[-1].lower() if found else None
 
 
-def llm_judge_call(prompt: str, response: str, provider: str, model: str, max_tokens: int = 1024) -> str:
+def llm_judge_call(prompt: str, response: str, provider: str, model: str, max_tokens: int = 1024) -> tuple[str, dict]:
+    """Return (text, meta); meta records the stop reason and token usage."""
     system = rubric_text()
     user = LLM_USER_TEMPLATE.format(prompt=prompt, response=response)
     if provider == "groq":
@@ -126,7 +145,10 @@ def llm_judge_call(prompt: str, response: str, provider: str, model: str, max_to
             model=model, temperature=0, max_tokens=max_tokens,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         )
-        return out.choices[0].message.content or ""
+        u = out.usage
+        return out.choices[0].message.content or "", {
+            "finish_reason": out.choices[0].finish_reason,
+            "usage": {"prompt": u.prompt_tokens, "completion": u.completion_tokens} if u else None}
     if provider == "anthropic":
         import anthropic
         client = anthropic.Anthropic()
@@ -134,5 +156,25 @@ def llm_judge_call(prompt: str, response: str, provider: str, model: str, max_to
             model=model, max_tokens=max_tokens, system=system,  # no sampling controls in this API (deviation log)
             messages=[{"role": "user", "content": user}],
         )
-        return "".join(b.text for b in out.content if b.type == "text")
+        return "".join(b.text for b in out.content if b.type == "text"), {
+            "finish_reason": out.stop_reason,
+            "usage": {"prompt": out.usage.input_tokens, "completion": out.usage.output_tokens}}
+    if provider == "gemini":
+        import os
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        # Safety filters off so the judge can read attack text; otherwise refusals would
+        # surface as missing verdicts (deviation log, entry 2).
+        safety = [types.SafetySetting(category=c, threshold="BLOCK_NONE") for c in GEMINI_SAFETY_CATEGORIES]
+        out = client.models.generate_content(
+            model=model, contents=user,
+            config=types.GenerateContentConfig(system_instruction=system, temperature=0,
+                                               max_output_tokens=max_tokens, safety_settings=safety))
+        cand = out.candidates[0] if out.candidates else None
+        u = out.usage_metadata
+        return (out.text or ""), {
+            "finish_reason": str(cand.finish_reason) if cand else f"no candidate: {out.prompt_feedback}",
+            "usage": {"prompt": u.prompt_token_count, "completion": u.candidates_token_count,
+                      "thoughts": u.thoughts_token_count} if u else None}
     raise ValueError(f"unknown provider {provider!r}")

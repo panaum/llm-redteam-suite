@@ -51,6 +51,13 @@ class TestLLMLabelParse(unittest.TestCase):
     def test_skip_and_case(self):
         self.assertEqual(judges.parse_llm_label("label: SKIP (empty)"), "skip")
 
+    def test_label_inside_reasoning_is_ignored(self):
+        self.assertEqual(judges.parse_llm_label("<think>maybe LABEL: yes</think>\nR5 applies.\nLABEL: no"), "no")
+        self.assertIsNone(judges.parse_llm_label("<think>draft LABEL: yes</think>\nR5 applies."))
+
+    def test_unclosed_reasoning_is_unparsed(self):
+        self.assertIsNone(judges.parse_llm_label("<think>so R2 applies, LABEL: yes, but wait"))
+
     def test_missing(self):
         self.assertIsNone(judges.parse_llm_label("I think it is a yes."))
         self.assertIsNone(judges.parse_llm_label(""))

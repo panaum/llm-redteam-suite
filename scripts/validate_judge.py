@@ -173,6 +173,21 @@ def cmd_sample(args):
 
 # ── score ─────────────────────────────────────────────────────────────────────
 
+TRANSPORT_ERRORS = ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED", "overloaded", "timed out", "Timeout",
+                    "Connection")
+
+
+def call_with_transport_retry(fn, attempts: int = 8, wait_s: float = 20.0):
+    """Retry transport failures only (plan §2.3); anything else, e.g. a billing error, is raised."""
+    for k in range(attempts):
+        try:
+            return fn()
+        except Exception as e:
+            if k == attempts - 1 or not any(t in f"{type(e).__name__} {e}" for t in TRANSPORT_ERRORS):
+                raise
+            time.sleep(wait_s * (k + 1))
+
+
 def cmd_score(args):
     sample = load(SAMPLE)["items"]
     path = HIDDEN / f"judge_{args.judge}.json"
@@ -195,7 +210,9 @@ def cmd_score(args):
         if not (args.provider and args.model):
             sys.exit("--provider and --model are required for the llm judge (fixed in STUDY_PLAN.md).")
         cfg = {"provider": args.provider, "model": args.model,
-               "temperature": 0 if args.provider == "groq" else "not settable (anthropic SDK has no sampling params)",
+               "temperature": "not settable (anthropic SDK has no sampling params)" if args.provider == "anthropic" else 0,
+               **({"safety_settings": "BLOCK_NONE: " + ", ".join(judges.GEMINI_SAFETY_CATEGORIES)}
+                  if args.provider == "gemini" else {}),
                "max_tokens": args.max_tokens, "rubric_sha256": sha256(judges.RUBRIC_PATH)}
         if out.get("config") and out["config"] != cfg:
             sys.exit(f"Existing LLM verdicts used a different config: {out['config']}")
@@ -203,10 +220,11 @@ def cmd_score(args):
         for i, it in enumerate(sample, 1):
             if it["item_id"] in out["verdicts"]:
                 continue
-            raw = judges.llm_judge_call(it["prompt"], it["response"], args.provider, args.model, args.max_tokens)
+            raw, meta = call_with_transport_retry(
+                lambda: judges.llm_judge_call(it["prompt"], it["response"], args.provider, args.model, args.max_tokens))
             label = judges.parse_llm_label(raw)
             out["verdicts"][it["item_id"]] = {
-                "label": label, "success": {"yes": True, "no": False}.get(label), "raw": raw, "ts": now()}
+                "label": label, "success": {"yes": True, "no": False}.get(label), "raw": raw, "ts": now(), **meta}
             save(path, out)
             print(f"  {i}/{len(sample)} {it['item_id']}: {label}")
     out["scored_at"] = now()
@@ -534,6 +552,34 @@ def cmd_analyse(args):
           f"{fmt_p(*m['fpr'])} ({m['n_neg']}) | {fmt_p(*m['fnr'])} ({m['n_pos']}) |")
     w("")
     w("Confusion counts: rows are human reference, columns are judge. FP = judge says success, human says no.")
+    if "llm" in configs:
+        w("")
+        w(f"`llm` is **{configs['llm'].get('provider')} `{configs['llm'].get('model')}`** "
+          f"(max output tokens {configs['llm'].get('max_tokens')}, temperature {configs['llm'].get('temperature')}); "
+          "it replaced the pre-registered Claude judge (STUDY_PLAN deviation log, entry 2).")
+    claude_path = HIDDEN / "judge_llm_claude_run1.json"
+    if claude_path.exists():
+        cv = load(claude_path)["verdicts"]
+        c_ids = [i for i in items if i in cv and cv[i]["label"] in ("yes", "no") and i not in skipped]
+        c_ref = [int(ref_labels[i]["label"] == "y") for i in c_ids]
+        cm = judge_metrics(c_ref, [int(cv[i]["label"] == "yes") for i in c_ids])
+        ck = st.bootstrap(lambda idx: {"k": st.cohen_kappa([c_ref[t] for t in idx],
+                                                             [int(cv[c_ids[t]]["label"] == "yes") for t in idx])},
+                          len(c_ids))["k"]
+        w("")
+        w("#### Descriptive: partial Claude arm (claude-opus-5-5, pre-registered judge; run stopped)")
+        w("")
+        w(f"**Partial.** Scored {len(cv)} of {len(items)} items before the Anthropic account ran out of credit; "
+          f"{sum(1 for v in cv.values() if v['label'] is None)} outputs had no parseable label (cut off at the "
+          f"1,024-token cap), leaving **{len(c_ids)} items with a verdict**. Metrics below are on those {len(c_ids)} "
+          "items only, which are not a random subset (the unparsed items are the ones it reasoned about longest). "
+          "Not comparable row-for-row with the table above and outside the comparison family.")
+        w("")
+        w("| judge | n | TP | FP | FN | TN | agreement | κ [95% CI] | FPR (n_neg) | FNR (n_pos) | judge ASR − human ASR |")
+        w("|---|---|---|---|---|---|---|---|---|---|---|")
+        w(f"| claude (partial) | {cm['n']} | {cm['tp']} | {cm['fp']} | {cm['fn']} | {cm['tn']} | {fmt_p(*cm['agreement'])} | "
+          f"{cm['kappa']:.3f} [{ck[0]:.3f}, {ck[1]:.3f}] | {fmt_p(*cm['fpr'])} ({cm['n_neg']}) | "
+          f"{fmt_p(*cm['fnr'])} ({cm['n_pos']}) | {(cm['fp'] - cm['fn']) / cm['n']:+.1%} |")
     w("")
 
     w("### H1: the embedding scorer over-reports success")
@@ -871,7 +917,7 @@ def main():
 
     sc = sub.add_parser("score", help="run one judge over the sample")
     sc.add_argument("--judge", choices=COMPARED_JUDGES, required=True)
-    sc.add_argument("--provider", choices=["groq", "anthropic"])
+    sc.add_argument("--provider", choices=["groq", "anthropic", "gemini"])
     sc.add_argument("--model")
     sc.add_argument("--max-tokens", type=int, default=1024)
 

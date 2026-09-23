@@ -87,6 +87,8 @@ reported.
   also not the pipeline's original judge (`llama-3.1-8b-instant`).
 - **Disclosed contamination risk:** the rubric was drafted with the help of a Claude
   model. See §10 for what this does and does not bias.
+- **Superseded:** the LLM judge actually used is Google `gemini-3.8-flash`. The partial
+  Claude run is reported as a descriptive row. See the deviation log, entry 2.
 
 ### 2.4 Stored verdict (descriptive only)
 The `success` column as recorded. The published figures rest on it, so it is reported
@@ -322,6 +324,63 @@ What else this means:
     verdicts used are the stored ones.
   - Timing: recorded before the judge was run on any sampled item. It was found by a
     test call on an invented item, not a sampled one.
+- **2026-09-23, §2.3: LLM judge substituted (Gemini `gemini-3.8-flash`), and the token cap
+  raised to 16,384.**
+  - *What happened to the Claude run.* It stopped at 176 of 197 items when the Anthropic
+    account ran out of credit. 16 of the 176 outputs had no parseable label: 12 ended
+    mid-word and 4 were empty. The likely cause is the 1,024-token cap being used up by
+    reasoning that the API does not return as text. This is unconfirmed, because the stop
+    reason was not recorded. No further Anthropic credit is available.
+  - *Groq, tried and rejected.* The Groq account serves no chat model outside the Llama,
+    Qwen and GPT-OSS families that could do the job.
+    - `minimaxai/minimax-m2.7` appears in Groq's public docs but is not served to the
+      account.
+    - The only eligible chat model served is `allam-2-7b`. Its context is 4,096 tokens in
+      total. The judge input is about 2,640 tokens for the median item and about 3,950 for
+      the largest, so it cannot hold the rubric, the item and a useful reply.
+  - *Gemini choice, with criteria fixed before any sampled item was judged.* First, a
+    pinned model name that is not a preview and not a `-latest` alias. Second, the
+    strongest tier meeting that.
+    - `gemini-2.5-pro` met both, but the API refused it ("no longer available to new
+      users").
+    - Every available Pro model is a preview.
+    - `gemini-3.8-flash` is the newest pinned, non-preview model, so it is the judge.
+    - Gemini is outside all target families.
+    - Test calls on two invented items returned the expected labels, with finish reason
+      STOP and 57–223 reasoning tokens each.
+  - *Protocol.*
+    - All 197 items run under one configuration: temperature 0 and
+      `max_output_tokens` 16,384. On Gemini that cap includes reasoning tokens, so it is
+      set with wide headroom.
+    - Safety filters are set to `BLOCK_NONE` for harassment, hate speech, sexually
+      explicit and dangerous content. Without that, refusals to read attack text would
+      surface as missing verdicts.
+    - The pre-registered template and the verbatim rubric are unchanged.
+    - Transport errors (503/429) are retried with backoff. Other errors stop the run.
+  - *Parser change.* Text inside `<think>…</think>` is now ignored, so a draft label in
+    the reasoning is never taken as the verdict. An output left inside an unclosed
+    `<think>` counts as unparsed. The finish reason and token usage, including reasoning
+    tokens, are now stored for every call.
+  - *The Claude run is kept as a partial, descriptive arm:*
+    - File: `validation/.hidden/judge_llm_claude_run1.json`.
+    - 176 items scored, 160 with a verdict.
+    - It is reported as its own row, on its own items, and marked partial.
+    - It is outside the comparison family (C) and the paired analyses, because its item
+      set differs from the other judges'.
+    - Its 21 unscored and 16 unparsed items are not missing at random: the unparsed ones
+      are the items it reasoned about longest.
+  - *What was seen before this decision.* The reasoning text of the 12 cut-off Claude
+    outputs was read to diagnose the failure; none contains a label. No parsed Claude
+    verdict was viewed, and the annotator has not been unblinded.
+  - *Consequences:*
+    1. The §10 note about a Claude judge sharing the rubric drafter's defaults no longer
+       applies to the primary LLM arm. It still applies to the partial Claude row.
+    2. The judge is a Flash-tier model. Pro-tier models were unavailable or preview-only,
+       so the LLM arm may understate what a stronger LLM judge would achieve.
+    3. Gemini is a family whose behaviour on this rubric is unknown. That was the
+       investigator's stated reason for preferring Claude. Its agreement with the human
+       labels carries interpretive variance that cannot be separated from the judging
+       method itself.
 
 ### Changelog
 
