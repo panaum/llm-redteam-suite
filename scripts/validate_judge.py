@@ -47,6 +47,14 @@ FOCAL_MODEL = "llama-3.1-8b-instant"  # STUDY_PLAN §7.3: 137 of 197 sampled ite
 REFERENCE_LABELS = "anaum"            # STUDY_PLAN §5 (v1.3): pass 1 is the reference label set
 PASS1_LABELS = "anaum"                # pass 1
 PASS2_LABELS = "anaum-pass2"          # pass 2: abandoned after 2 items (v1.3), not analysed
+PARTIAL_ARM_FILES = [  # deviation entries 2 and 3: descriptive rows only
+    ("gemini-3.5-flash (partial)", "judge_llm.json",
+     "the LLM arm actually run; stopped at the Gemini free-tier limit of 20 requests per model per day."),
+    ("claude-opus-5-5 (partial)", "judge_llm_claude_run1.json",
+     "the pre-registered judge; stopped when Anthropic credit ran out; unparsed outputs were cut off at the "
+     "1,024-token cap and are the items it reasoned about longest."),
+]
+PARTIAL_ARM_EXCLUDED = ["judge_llm_gemini38_partial.json"]
 MIN_DWELL_FLOOR_S = 4.0               # STUDY_PLAN §4 (v1.2): reading floor per item
 DWELL_S_PER_CHAR = 0.02               # 50 characters/second, a skim-speed floor
 SKIP_REASONS = {"e": "empty", "l": "language", "p": "payload"}
@@ -482,11 +490,22 @@ def cmd_analyse(args):
             d = load(p)
             verdicts[j] = {i: v["success"] for i, v in d["verdicts"].items()}
             configs[j] = d.get("config", {})
-    judges_run = [j for j in COMPARED_JUDGES if j in verdicts]
-
     skipped = {i for i, l in ref_labels.items() if l["label"] == "skip"}
-    llm_unparsed = {i for i, v in verdicts.get("llm", {}).items() if v is None}
-    analysed = sorted(i for i in items if i not in skipped and i not in llm_unparsed)
+    analysed = sorted(i for i in items if i not in skipped)
+    # Deviation entry 3: only arms with a verdict on every analysed item enter the primary
+    # comparison; the others are partial arms, reported descriptively on the items they cover.
+    judges_run = [j for j in COMPARED_JUDGES
+                  if j in verdicts and all(verdicts[j].get(i) is not None for i in analysed)]
+    partial_arms = []
+    for name, path, note in PARTIAL_ARM_FILES:
+        p = HIDDEN / path
+        if p.exists() and not (path == "judge_llm.json" and "llm" in judges_run):
+            d = load(p)
+            partial_arms.append({"name": name, "note": note, "config": d.get("config", {}),
+                                 "n_scored": len(d["verdicts"]),
+                                 "unparsed": sum(1 for v in d["verdicts"].values() if v.get("label") is None),
+                                 "verdicts": {i: v["label"] == "yes" for i, v in d["verdicts"].items()
+                                              if v.get("label") in ("yes", "no") and i not in skipped}})
     ref = [int(ref_labels[i]["label"] == "y") for i in analysed]
     opener = {i: judges.opens_compliant(items[i]["response"]) for i in analysed}
     opener_raw = {i: judges.opens_compliant(items[i]["response"], strip_reasoning=False) for i in analysed}
@@ -508,8 +527,9 @@ def cmd_analyse(args):
       f"(sha256 `{sha256(judges.RUBRIC_PATH)[:12]}`) · protocol: STUDY_PLAN.md")
     w("")
     w(f"Reference labels: **{ref_name}**. Sample: n = {len(items)} drawn; "
-      f"{len(skipped)} skipped by the reference; {len(llm_unparsed)} excluded because the LLM judge "
-      f"returned no parseable label; **n = {len(analysed)} analysed**.")
+      f"{len(skipped)} skipped by the reference; **n = {len(analysed)} analysed**. "
+      f"Primary comparison: complete judge arms only ({', '.join(judges_run) or 'none'}), plus the stored "
+      f"verdict as a descriptive row. Partial LLM arms are in §1b (descriptive only).")
     w("")
     w("All labels come from one annotator (the rubric's author); inter-rater reliability was not measured. "
       "See §3.")
@@ -539,8 +559,9 @@ def cmd_analyse(args):
 
     w("## 1. Primary (confirmatory), pooled across categories")
     w("")
-    w("Rows: the three compared judges. `stored` is the verdict recorded in `db/redteam.db` (the basis of "
-      "published figures); it is descriptive and outside the comparison family.")
+    w(f"Rows: the complete judge arms ({', '.join(judges_run)}). The pre-registered LLM arm is incomplete and is "
+      "reported in §1b instead (STUDY_PLAN deviation log, entry 3). `stored` is the verdict recorded in "
+      "`db/redteam.db` (the basis of published figures); it is descriptive and outside the comparison family.")
     w("")
     w("| judge | n | TP | FP | FN | TN | agreement | κ [95% CI] | band | FPR (n_neg) | FNR (n_pos) |")
     w("|---|---|---|---|---|---|---|---|---|---|---|")
@@ -552,34 +573,37 @@ def cmd_analyse(args):
           f"{fmt_p(*m['fpr'])} ({m['n_neg']}) | {fmt_p(*m['fnr'])} ({m['n_pos']}) |")
     w("")
     w("Confusion counts: rows are human reference, columns are judge. FP = judge says success, human says no.")
-    if "llm" in configs:
+    w("")
+
+    w("## 1b. Partial LLM arms (descriptive only)")
+    w("")
+    w("**Excluded from the primary comparison and from all significance testing.** Each arm is computed only on "
+      "the items it covers with a parseable verdict, so its n differs from the primary table and from the other "
+      "arms. The rows are not comparable with each other or with the primary rows, and no difference between "
+      "them is tested. Covered items are not a random subset of the sample.")
+    w("")
+    if partial_arms:
+        w("| arm | scored / sample | unparsed | n with verdict | TP | FP | FN | TN | agreement | κ [95% CI] | "
+          "FPR (n_neg) | FNR (n_pos) | judge ASR − human ASR |")
+        w("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+        for arm in partial_arms:
+            ids = [i for i in analysed if i in arm["verdicts"]]
+            if not ids:
+                w(f"| {arm['name']} | {arm['n_scored']}/{len(items)} | {arm['unparsed']} | 0 | | | | | | | | | |")
+                continue
+            r = [int(ref_labels[i]["label"] == "y") for i in ids]
+            pv = [int(arm["verdicts"][i]) for i in ids]
+            m = judge_metrics(r, pv)
+            kb = st.bootstrap(lambda idx: {"k": st.cohen_kappa([r[t] for t in idx], [pv[t] for t in idx])}, len(ids))["k"]
+            k_txt = "undefined" if math.isnan(m["kappa"]) else f"{m['kappa']:.3f} [{kb[0]:.3f}, {kb[1]:.3f}]"
+            w(f"| {arm['name']} | {arm['n_scored']}/{len(items)} | {arm['unparsed']} | {m['n']} | {m['tp']} | {m['fp']} | "
+              f"{m['fn']} | {m['tn']} | {fmt_p(*m['agreement'])} | {k_txt} | {fmt_p(*m['fpr'])} ({m['n_neg']}) | "
+              f"{fmt_p(*m['fnr'])} ({m['n_pos']}) | {(m['fp'] - m['fn']) / m['n']:+.1%} |")
         w("")
-        w(f"`llm` is **{configs['llm'].get('provider')} `{configs['llm'].get('model')}`** "
-          f"(max output tokens {configs['llm'].get('max_tokens')}, temperature {configs['llm'].get('temperature')}); "
-          "it replaced the pre-registered Claude judge (STUDY_PLAN deviation log, entry 2).")
-    claude_path = HIDDEN / "judge_llm_claude_run1.json"
-    if claude_path.exists():
-        cv = load(claude_path)["verdicts"]
-        c_ids = [i for i in items if i in cv and cv[i]["label"] in ("yes", "no") and i not in skipped]
-        c_ref = [int(ref_labels[i]["label"] == "y") for i in c_ids]
-        cm = judge_metrics(c_ref, [int(cv[i]["label"] == "yes") for i in c_ids])
-        ck = st.bootstrap(lambda idx: {"k": st.cohen_kappa([c_ref[t] for t in idx],
-                                                             [int(cv[c_ids[t]]["label"] == "yes") for t in idx])},
-                          len(c_ids))["k"]
+        for arm in partial_arms:
+            w(f"- **{arm['name']}**: {arm['note']}")
         w("")
-        w("#### Descriptive: partial Claude arm (claude-opus-5-5, pre-registered judge; run stopped)")
-        w("")
-        w(f"**Partial.** Scored {len(cv)} of {len(items)} items before the Anthropic account ran out of credit; "
-          f"{sum(1 for v in cv.values() if v['label'] is None)} outputs had no parseable label (cut off at the "
-          f"1,024-token cap), leaving **{len(c_ids)} items with a verdict**. Metrics below are on those {len(c_ids)} "
-          "items only, which are not a random subset (the unparsed items are the ones it reasoned about longest). "
-          "Not comparable row-for-row with the table above and outside the comparison family.")
-        w("")
-        w("| judge | n | TP | FP | FN | TN | agreement | κ [95% CI] | FPR (n_neg) | FNR (n_pos) | judge ASR − human ASR |")
-        w("|---|---|---|---|---|---|---|---|---|---|---|")
-        w(f"| claude (partial) | {cm['n']} | {cm['tp']} | {cm['fp']} | {cm['fn']} | {cm['tn']} | {fmt_p(*cm['agreement'])} | "
-          f"{cm['kappa']:.3f} [{ck[0]:.3f}, {ck[1]:.3f}] | {fmt_p(*cm['fpr'])} ({cm['n_neg']}) | "
-          f"{fmt_p(*cm['fnr'])} ({cm['n_pos']}) | {(cm['fp'] - cm['fn']) / cm['n']:+.1%} |")
+    w(f"Not analysed: {', '.join(f'`{f}`' for f in PARTIAL_ARM_EXCLUDED)} (STUDY_PLAN deviation log, entry 2).")
     w("")
 
     w("### H1: the embedding scorer over-reports success")
@@ -609,8 +633,9 @@ def cmd_analyse(args):
 
     w("### Judge comparison (pairwise Δκ, paired bootstrap)")
     w("")
-    w("A difference counts as distinguished only if its Bonferroni-adjusted interval "
-      "(98.33%, three comparisons) excludes 0.")
+    w("A difference counts as distinguished only if its Bonferroni-adjusted interval excludes 0. The "
+      "pre-registered family had three comparisons; with the LLM arm incomplete, fewer remain, and the "
+      "pre-registered 98.33% level is kept, which is conservative (deviation entry 3).")
     w("")
     w("| comparison | Δκ | 95% CI | 98.33% CI | distinguished |")
     w("|---|---|---|---|---|")
@@ -857,9 +882,9 @@ def cmd_analyse(args):
     w("")
     for j, cfg in configs.items():
         w(f"- **{j}**: `{json.dumps(cfg)[:300]}`")
-    missing = [j for j in COMPARED_JUDGES if j not in verdicts]
+    missing = [j for j in COMPARED_JUDGES if j not in judges_run]
     if missing:
-        w(f"- Not scored: {', '.join(missing)}.")
+        w(f"- Not in the primary comparison (incomplete or not scored): {', '.join(missing)}; see §1b.")
     w("")
     w(f"![Published vs human-labelled ASR by category]({FIGURE.name})")
     REPORT.write_text("\n".join(L) + "\n")
