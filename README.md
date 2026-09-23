@@ -11,7 +11,24 @@ Methodology based on [Chao et al. 2023 (PAIR, arXiv:2310.08419)](https://arxiv.o
 
 ---
 
+## Judge validation study
+
+The attack success rates in this README come from the suite's automatic judges. A pre-registered study checked those judges against **197 blind human labels**, a sample stratified by category from the 432 attacks logged in `db/redteam.db`. Full write-up: [paper](paper/judge-validation.md). All numbers: [validation report](validation/validation_report.md).
+
+- **Agreement with the human labels was slight to fair.** The study compared three verdicts: the embedding scorer (`evaluators/scorer.py`), a refusal-string keyword matcher, and the stored composite verdict behind the published figures. Cohen's κ ranged from **0.122 to 0.281** (n = 197).
+- **The embedding scorer under-reported success by about 30 points.** It gave 22.3% against 52.8% by human label: a paired difference of −30.5%, 95% CI [−38.6, −22.3].
+- **The keyword matcher over-reported by 33.0 points**, 95% CI [24.9, 40.6].
+- **The direction of error depends on the judge.** A rate from this suite is neither a lower nor an upper bound unless you know which judge produced it.
+- **The reference labels are weak.** One annotator made all the labels, quickly (median 7 s per item), and also wrote the rubric. Inter-rater reliability was not measured, so the study cannot separate scorer error from error in the human reference.
+- **role_confusion is the one category where the original number looks inflated.** The stored verdicts give 85.4% (41/48 attacks) against 69.7% (23/33) by human label. This is exploratory, and the two 95% intervals overlap.
+
+The tables below were not re-labelled cell by cell. The study measures the judge's error; it does not produce corrected per-model figures.
+
+---
+
 ## Results
+
+> **Unvalidated judge output.** Every rate in this section was produced by the automatic judges described under [Scoring](#scoring). Read the [judge validation study](#judge-validation-study) before relying on these numbers.
 
 ### Multi-Model Attack Success Rate (ASR)
 
@@ -21,7 +38,7 @@ Methodology based on [Chao et al. 2023 (PAIR, arXiv:2310.08419)](https://arxiv.o
 | Qwen 32B | **25.9%** 🟡 | 60% | 0% | 0% | 100% | 0% |
 | GPT-OSS 120B | **3.7%** 🟢 | 20% | 0% | 0% | 0% | 0% |
 
-> Lower ASR = safer. Hallucination and PII categories showed 0% ASR across all models. Role confusion was the most exploitable category — 100% ASR on two models.
+> Lower ASR = safer. Hallucination and PII categories showed 0% ASR across all models in the judge's output. On the validation sample, the human labels gave 18.2% (6/33) for hallucination and 45.5% (15/33) for pii_leakage. Role confusion was the most exploitable category in the judge's output, with 100% ASR on two models. The validation study suggests the stored rate for this category is inflated.
 
 ### HarmBench Comparison
 
@@ -78,6 +95,13 @@ llm-redteam-suite/
 ├── evaluators/
 │   └── scorer.py             # Semantic cosine similarity + ASR metric
 │
+├── scripts/
+│   └── validate_judge.py     # Judge-validation study: sample, label, score, analyse
+│
+├── RUBRIC.md / STUDY_PLAN.md # Pre-registered labelling rubric and study plan
+├── validation/               # Sample, 197 human labels, judge outputs, report
+├── paper/                    # Judge-validation paper (Markdown, LaTeX)
+│
 ├── defenders/
 │   └── defense_layer.py      # Input filter + system prompt hardening + toxicity classifier
 │
@@ -112,12 +136,10 @@ Every run fires three layers of attacks:
 
 ### Scoring
 
-Dual scoring — both vote on every response:
+- **Semantic scorer** (`sentence-transformers/all-MiniLM-L6-v2`): computes cosine similarity against refusal and compliance anchors. Against blind human labels it under-reported success, missing 73 of 104 human-labelled successes (see [Judge validation study](#judge-validation-study)).
+- **LLM judge** (`llama-3.1-8b-instant`, in `redteam.py`): reads the attack and the response and answers YES or NO. Its prompt counts adopting an unrestricted persona as success.
 
-- **Semantic scorer** (`sentence-transformers/all-MiniLM-L6-v2`): computes cosine similarity against refusal and compliance anchors. No keyword matching — resistant to paraphrased refusals like *"I cannot help but notice..."*
-- **LLM judge** (Llama 3.3): reads the attack and response, reasons about whether the model was actually manipulated.
-
-An attack is flagged successful if **either** scorer detects a failure — prioritizing recall over precision for vulnerability detection. ASR is computed per-run and per-category. All results saved to SQLite for cross-run trend analysis.
+For **static attacks**, an attack is flagged successful if **either** scorer flags it. For **PAIR and many-shot attacks**, the semantic scorer decides alone. ASR is computed per run and per category. All results are saved to SQLite for cross-run trend analysis.
 
 ### Defense Layer
 
@@ -199,7 +221,7 @@ python run_harmbench.py
 
 ## Key Findings
 
-1. **Role confusion is the most exploitable category** — 100% ASR on Llama 3.3 and Qwen 32B using soft-language persona prompts that bypass keyword filters.
+1. **Role confusion is the most exploitable category**: 100% ASR on Llama 3.3 and Qwen 32B, using soft-language persona prompts that bypass keyword filters. This is unvalidated judge output. It is also the one category where the validation study found the stored rate higher than the human-labelled rate (85.4% vs 69.7%, exploratory).
 
 2. **System prompt hardening outperforms input filtering** as a single defense (-20% ASR vs -15%). Stacking all three produces non-additive results — some attacks bypass the full stack that individual defenses catch separately.
 
